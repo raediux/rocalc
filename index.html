@@ -63,6 +63,16 @@ Calc's theme: <select id="theme" onChange="themes()"><option value="0">Original<
      breaking that hardcoded assumption. -->
 <input type="checkbox" id="restrict_lvlequip" style="display:none" disabled>
 <input type="checkbox" id="all_card" style="display:none">
+<!-- Same trap, different element: the old "Changelog 2026-07-05" box was
+     removed from the visible page, but foot.js's SAME hardcoded bootstrap
+     block ends with an unconditional LoadChangelog() call that does
+     document.getElementById("changelog").innerHTML=... . On a genuinely
+     fresh browser (no prior localStorage state masking it) this throws a
+     null-element TypeError — this one doesn't cascade into the rest of the
+     bootstrap chain (it's the LAST statement), but it's still a real error
+     every first-time visitor hits. Fixed the same way: keep a hidden
+     element with this id in the DOM instead of removing it entirely. -->
+<div id="changelog" style="display:none"></div>
 <p style="font-size:20px; margin:0 0 8px 0;">OPTIONS</p>
 <div class="options-row">
 <span>Calc's theme: <select id="theme" onChange="themes()"><option value="7">Glass Dark</option><option value="0">Light</option></select></span>
