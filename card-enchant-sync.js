@@ -1319,7 +1319,35 @@
     requestAnimationFrame(function () { pending = false; sweep(); });
   }).observe(form, { childList: true, subtree: true });
 
+  // LoadLocal() (Local Load) and URLIN() (URL-hash character import, still
+  // reachable even with the "Load URL" button removed — see index.html)
+  // both set dozens of fields via direct .value assignment in one giant
+  // comma-expression, never dispatching "change" events, so bindSlot()'s
+  // listeners never fire. Both DO call the (already-patched) StAllCalc()
+  // themselves at the end, so the underlying math/globals are always
+  // correct — confirmed live: n_A_VIT/n_A_MaxHP matched the equipped
+  // values exactly after a Local Load — but recompute() (which rebuilds
+  // the Project Baldur Adjustments panel from equippedCardNames()) was
+  // never triggered, so the panel kept showing stale/empty state, making
+  // it look like every automation had silently stopped working even
+  // though the character's actual stats were correct the whole time. Same
+  // wrap-original-then-call-mine pattern as theme-payon.js's LoadTheme
+  // wrapper.
+  function wrapForcedRecompute(name) {
+    if (typeof window[name] !== "function" || window[name].__cesPatched) return;
+    var original = window[name];
+    var patched = function () {
+      var result = original.apply(this, arguments);
+      recompute();
+      return result;
+    };
+    patched.__cesPatched = true;
+    window[name] = patched;
+  }
+
   patchStPlusCard();
   patchStAllCalc();
+  wrapForcedRecompute("LoadLocal");
+  wrapForcedRecompute("URLIN");
   sweep();
 })();
