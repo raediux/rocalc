@@ -714,23 +714,29 @@
         return { n_A_MaxHP: nHP - vHP };
       },
     },
-    // Carat (headgear, head2 slot — confirmed live via n_A_card[9]===298,
-    // not shield despite m_Card position "2"): vanilla INT+2 (code4,
-    // unaffected) plus a description-only "%MaxSP+150 at refine>=9" that is
-    // ACTUALLY DEAD CODE for this card: the only hardcoded check in foot.js
-    // ("n_A_HEAD_REFINE >= 9 && 298 == n_A_card[8] && (I += 150)") tests
-    // n_A_card[8], which is head1 — but Carat can only ever be equipped in
-    // head2 (n_A_card[9]) in this dataset, confirmed live, and there is no
-    // n_A_card[9]-keyed equivalent anywhere (exhaustively grepped). So
-    // vanilla's real contribution here is always 0, live-verified (MaxSP
-    // stayed flat across refine 7-9 in testing, when a real +150-at-9 bonus
-    // would have shown a jump). Originally implemented as if vanilla DID
-    // grant +150 (a bug caught and fixed 2026-07-06) — the new bonus is a
-    // clean addition, not a vanilla-minus-new delta.
+    // Carat (headgear, position "2" in m_Card): vanilla INT+2 (code4,
+    // unaffected) plus a description-only "%MaxSP+150 at refine>=9"
+    // (`n_A_HEAD_REFINE >= 9 && 298 == n_A_card[8] && (I += 150)`) that only
+    // checks n_A_card[8] (head1) — CORRECTION 2026-07-07: an earlier pass
+    // wrongly concluded Carat can only equip in head2 (dropdown check at the
+    // time only looked at one slot) and treated this as dead code entirely.
+    // Ray caught the resulting bug: Carat is actually selectable in BOTH
+    // head1 and head2 dropdowns, so vanilla's +150 check is very much real
+    // when equipped in head1 — the old unconditional "+100, clean addition"
+    // implementation was double-stacking with vanilla's own +150 in that
+    // case (a live-tested +250 net swing at refine 9 in head1, instead of
+    // the intended 150->100). Fixed to be slot-aware: cancel vanilla's real
+    // +150 only when actually in head1 (n_A_card[8]), then add the new
+    // value. In head2, vanilla's check still never fires (confirmed no
+    // n_A_card[9]-keyed equivalent exists anywhere), so it stays a clean
+    // addition there, matching the original head2 test results exactly.
     "Carat": {
       refineVar: "n_A_HEAD_REFINE",
       apply: function (refine) {
-        return { n_A_MaxSP: refine >= 7 ? 100 : 0 };
+        var inHead1 = window.n_A_card && n_A_card[8] === 298;
+        var vSP = inHead1 && refine >= 9 ? 150 : 0;
+        var nSP = refine >= 7 ? 100 : 0;
+        return { n_A_MaxSP: nSP - vSP };
       },
     },
     // Orc Baby (shoulder/garment slot): vanilla FLEE base 10 (code9,
