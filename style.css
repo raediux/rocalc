@@ -965,6 +965,48 @@ body.t-payon .ces-summary {
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* Full static changelog reference table (#fullChangelogSection in
+   index.html) — a normal page section in document flow, styled by the
+   site's own .main rules for background/padding same as every other
+   section; only the table internals need rules of their own here. */
+.ces-fc-heading {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin-bottom: var(--sp-2);
+}
+.ces-fc-table {
+  width: 100%;
+  border-spacing: 0 2px;
+  table-layout: fixed;
+}
+.ces-fc-table .ces-card {
+  font-weight: 600;
+  width: 180px;
+  padding-right: var(--sp-3);
+}
+.ces-fc-table .ces-fc-full {
+  width: 45%;
+  opacity: 0.9;
+  padding-right: var(--sp-3);
+}
+.ces-fc-table .ces-fc-delta {
+  opacity: 0.6;
+}
+.ces-fc-table tr.ces-fc-slot td {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #6d7684;
+  padding-top: var(--sp-3);
+}
+.ces-fc-table tr.ces-fc-slot:first-child td {
+  padding-top: 0;
+}
+
 /* ============================================================
    OPTIONS row (index.html) — spreads the theme/ASPD selects and
    restriction checkboxes horizontally instead of stacking them

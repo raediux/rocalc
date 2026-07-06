@@ -281,6 +281,16 @@
     "Howard Alt-Eisen": ["+6 ASPD (-5->1, changelog: \"Harword_Card\")"],
     "Firelock Soldier": ["Max HP/SP -1%"],
     "Kathryne Keyron": ["%MATK refine>=9 -> refine>=7 (changelog: \"Katrinn_Card\")"],
+    // Gold Acidus's and Blue Acidus's engine-edit halves were confirmed and
+    // implemented in foot.js long ago (see the header comment's engine-edit
+    // list) but never actually got an ENGINE_EDIT_SUMMARY entry, so neither
+    // ever showed up in this small delta panel — a real gap, found and
+    // fixed 2026-07-07 while compiling the full-changelog reference table
+    // below. Gold Acidus's unconditional %MaxHP/%MaxSP base (code15/16) is
+    // separately handled in CODE_DELTAS above; this entry covers only its
+    // refine<=4 "additional" engine-edit layer.
+    "Gold Acidus": ["Refine <=4: additional MaxHP +5%, MaxSP +5%, HP/SP Recovery Rate +15% (was +4%/+4%/+5%)"],
+    "Blue Acidus": ["SP Recovery Rate +20% (was +5%, refine<=4)"],
     // 2026-07-06: card.js data edits (not foot.js formula edits) — a slot
     // reassignment and two renames/reworks Ray approved as a card.js
     // exception, same basis as the foot.js engine edits above.
@@ -563,15 +573,16 @@
     // about the refine-safety mechanic, unrelated to this card's stat
     // contribution — not modeled here.)
     "Chung E": [{ code: 6, delta: 2, label: "+2 LUK (base -5 -> -3)" }],
-    // Seyren Windsor (headgear): vanilla STR-6 base (code1=-6, confirmed via
-    // [180,2,"Seyren Windsor","<b>For each refine level:</b> STR +1",1,-6,0]).
-    // Its description's per-refine-level STR+1 scaling is ACTUALLY DEAD CODE
-    // in this dataset — same head1-vs-head2 index bug as Carat/Gibbet: the
-    // only hardcoded line (`180 == n_A_card[8] && (n += n_A_HEAD_REFINE)`)
-    // tests n_A_card[8] (head1), but Seyren can only be equipped in head2
-    // (n_A_card[9]) here, confirmed live. Doesn't matter functionally since
-    // the changelog only touches the base penalty and we were never relying
-    // on the per-refine scaling — CODE_DELTAS only, no REFINE_DELTAS needed.
+    // Seyren Windsor (headgear, selectable in BOTH head1 and head2 —
+    // CORRECTED 2026-07-07, an earlier pass wrongly assumed head2-only and
+    // called the per-refine scaling dead code): foot.js's only hardcoded
+    // check (`180==n_A_card[8]&&(n+=n_A_HEAD_REFINE)`, STR+1/refine) is
+    // keyed to head1 and IS live when equipped there. Doesn't matter for our
+    // implementation either way, though: this scaling is a separate,
+    // orthogonal mechanic from the code1 base-STR delta below (which applies
+    // via the generic per-code dispatch regardless of slot) — the changelog
+    // only touches the base penalty, so there's nothing to cancel or adjust
+    // for the scaling — CODE_DELTAS only, no REFINE_DELTAS needed.
     "Seyren Windsor": [{ code: 1, delta: 2, label: "+2 STR (base -6 -> -4)" }],
     // Dimik (body): vanilla VIT-5 base (code3=-5, confirmed via
     // [198,4,"Dimik","<b>For each refine level:</b> VIT +1",3,-5,0]) plus a
@@ -759,21 +770,15 @@
         return { n_A_FLEE: delta, n_tok60: delta };
       },
     },
-    // Gibbet (headgear, head2 slot — confirmed live via n_A_card[9]===213):
-    // its ACTUAL vanilla behavior here is an UNCONDITIONAL MDEF+5, no refine
-    // gate at all (foot.js: "213 == n_A_card[9] && (n_A_MDEF += 5)"). The
-    // refine<=5-gated version the flavor text describes only exists as a
-    // DIFFERENT hardcoded check keyed to head1 (n_A_card[8]), which never
-    // fires for this card since it can only be equipped in head2 here — a
-    // head1-vs-head2 inconsistency in the original vanilla rocalc tool
-    // itself (same bug class caught on Carat above), not a deliberate design
-    // choice: per Ray, headgear cards in real RO don't differentiate which
-    // headgear slot they're socketed in at all (only Upper headgear even
-    // has card slots; a card's effect doesn't care which UI dropdown holds
-    // it). So the changelog's refine<=4-gated intent is treated as the
-    // correct/intended behavior to implement, replacing the always-on +5
-    // with a conditional +7 — a genuine behavior change (introducing gating
-    // where this specific slot had none), not a simple value bump.
+    // Gibbet (headgear, selectable in BOTH head1 and head2 — CORRECTED
+    // 2026-07-07, an earlier pass wrongly assumed head2-only): foot.js has
+    // TWO hardcoded checks, `213==n_A_card[9]&&(n_A_MDEF+=5)` (head2) and
+    // `213==n_A_card[8]&&(n_A_MDEF+=5)` (head1) — IDENTICAL, both
+    // unconditional +5, no refine gate on either. So unlike Carat (where the
+    // two slots' checks genuinely differed and canceling the wrong one
+    // caused real double-stacking), Gibbet's vanilla contribution is the
+    // same flat +5 regardless of which head slot it's in — the `vMDEF=5`
+    // constant below is correct either way, no slot-awareness needed.
     "Gibbet": {
       refineVar: "n_A_HEAD_REFINE",
       apply: function (refine) {
@@ -1104,6 +1109,173 @@
     return names;
   }
 
+  // Full static reference table (added 2026-07-07, per Ray's request): shows
+  // EVERY automated card's complete final effect, grouped by equip slot then
+  // alphabetically — unlike the small delta-only panel above/below it, this
+  // doesn't depend on what's currently equipped. "full" combines the card's
+  // unaffected vanilla stats with the new patched values into one final
+  // reading (e.g. Carat's own INT+2 plus its patched MaxSP bonus); "delta"
+  // is the change from vanilla, matching the small panel's convention.
+  // Conditional effects use a consistent bracket-tag convention: [Refine +N]
+  // for refine-gated bonuses, [Mage only]/[Swordsman only] for job-gated
+  // ones, [+ PartnerName] for the mini-boss FLEE combos. Slot data for every
+  // card below was confirmed live (not assumed from m_Card's unreliable
+  // "position" field) via the same CARD_SLOTS dropdown-membership check used
+  // throughout this project. Two real gaps found and fixed while compiling
+  // this: Gold Acidus's refine-conditional engine-edit layer and Blue Acidus
+  // entirely were missing from ENGINE_EDIT_SUMMARY (never showed up in the
+  // small delta panel either) — both added there too.
+  var FULL_CHANGELOG = [
+    { slot: "Headgear", cards: [
+      { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20", delta: "MaxHP -100 -> -20 (Mage only)" },
+      { name: "Blue Acidus", full: "[Refine ≤4] MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
+      { name: "Carat", full: "INT +2 · [Refine +7] MaxSP +100", delta: "Refine +9 -> +7, 150 -> 100 SP" },
+      { name: "Coco", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Ghoul", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Gibbet", full: "[Refine ≤4] MDEF +7", delta: "MDEF +5 (unconditional) -> +7 (refine ≤4 only)" },
+      { name: "Kathryne Keyron", full: "Cast Time -1%/refine · [Refine +7] MATK +2%", delta: "Refine +9 -> +7 (value unchanged)" },
+      { name: "Knocker", full: "ATK dmg vs Formless +10%", delta: "+5% (5% -> 10%)" },
+      { name: "Martin", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Permeter", full: "Shadow resist +15%, Undead-elem resist +15%, Ghost resist +15%", delta: "+15% Ghost (new)" },
+      { name: "Seyren Windsor", full: "STR -4 base, +1 STR per refine level", delta: "Base STR -6 -> -4" },
+      { name: "Stainer", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Wootan Fighter", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Wootan Shooter", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+    ]},
+    { slot: "Weapon", cards: [
+      { name: "Cecil Damon", full: "HIT +3", delta: "+33 HIT (-30 -> 3)" },
+      { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "+7% vs Formless/Undead/Fish/Demon/Angel/Dragon (new; already had vs Brute/Plant/Insect/Demi-Human)" },
+      { name: "Female Thief Bug", full: "AGI +2", delta: "+1 AGI (1 -> 2)" },
+      { name: "Fur Seal", full: "HIT +12, FLEE +4", delta: "+2 HIT (10->12), +1 FLEE (3->4)" },
+      { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
+      { name: "Hornet", full: "ATK +10", delta: "+7 ATK (3 -> 10)" },
+      { name: "Howard Alt-Eisen", full: "ASPD +1 (was -5)", delta: "+6 ASPD" },
+      { name: "Lunatic", full: "LUK +3", delta: "+2 LUK (1 -> 3)" },
+      { name: "Mobster", full: "Crit Dmg +18%", delta: "+3% (15% -> 18%)" },
+      { name: "Mutant Dragonoid", full: "ATK +20", delta: "+5 ATK (15 -> 20)" },
+      { name: "Piere", full: "(renamed from Andre Larva; stats unchanged)", delta: "Renamed, now drops from Piere" },
+      { name: "Soldier Skeleton", full: "Crit Rate +10", delta: "+1 (9 -> 10)" },
+      { name: "Stone Shooter", full: "ATK +15, HIT +15", delta: "+5 ATK, +5 HIT (10 -> 15 each)" },
+      { name: "Zenorc", full: "ATK +12", delta: "+2 ATK (10 -> 12)" },
+    ]},
+    { slot: "Body", cards: [
+      { name: "Agav", full: "DEF -3 · [Mage only] MaxSP +200", delta: "+7 DEF (-10 -> -3); MaxSP +100 -> +200 (Mage only)" },
+      { name: "Alicel", full: "DEF penalty removed (was -5)", delta: "+5 DEF" },
+      { name: "Ancient Mimic", full: "LUK/15 -> STR +1 (cycle)", delta: "Reassigned: was LUK/18->AGI, now LUK/15->STR" },
+      { name: "Apocalypse", full: "VIT +2 · [Refine +7] MaxHP +800", delta: "Refine +9 -> +7 (value unchanged)" },
+      { name: "Archdam", full: "Cast time -10%", delta: "-10% (was -20%)" },
+      { name: "Baby Desert Wolf", full: "MATK +1%", delta: "+1% MATK (new)" },
+      { name: "Baby Leopard", full: "Perfect Dodge +3", delta: "LUK +3 removed, Perfect Dodge +3 added" },
+      { name: "Cornutus", full: "DEF +5", delta: "+4 DEF (1 -> 5)" },
+      { name: "Dimik", full: "VIT +0 base, +1 VIT per refine level", delta: "Base VIT -5 -> 0 (removed)" },
+      { name: "Echio", full: "[Swordsman only] MaxHP +750", delta: "+500 -> +750 (Swordsman only)" },
+      { name: "Egnigem Cenia", full: "STR/15 -> DEX +1 (cycle)", delta: "Reassigned: was INT/18->STR, now STR/15->DEX" },
+      { name: "Goat", full: "[Refine ≤4] DEF +5, MDEF +7", delta: "Refine ≤5 -> ≤4; DEF+2/MDEF+5 -> DEF+5/MDEF+7" },
+      { name: "Mineral", full: "ATK -5, DEF +7", delta: "+20 ATK (-25 -> -5), +4 DEF (3 -> 7)" },
+      { name: "Mistress of Shelter", full: "DEX/15 -> VIT +1 (cycle)", delta: "Reassigned: was STR/18->INT, now DEX/15->VIT" },
+      { name: "Obsidian", full: "VIT/15 -> AGI +1 (cycle)", delta: "Reassigned: was DEX/18->VIT, now VIT/15->AGI" },
+      { name: "Observation", full: "AGI/15 -> INT +1 (cycle)", delta: "Reassigned: was VIT/18->DEX, now AGI/15->INT" },
+      { name: "Red Novus", full: "Confusion resist +50%", delta: "+50% (new)" },
+      { name: "Remover", full: "MaxHP +800 base, -20/refine", delta: "-40/refine -> -20/refine" },
+      { name: "Savage", full: "VIT +5, MaxHP +200", delta: "+2 VIT (3 -> 5), +200 MaxHP (new)" },
+      { name: "Skogul", full: "Bleeding resist +50%", delta: "+50% (new)" },
+      { name: "Super Picky", full: "VIT +3", delta: "+2 VIT (1 -> 3)" },
+      { name: "Thief Bug", full: "FLEE +4", delta: "+4 FLEE (new)" },
+      { name: "Venatu", full: "INT/15 -> LUK +1 (cycle)", delta: "Reassigned: was AGI/18->LUK, now INT/15->LUK" },
+      { name: "Venomous", full: "Poison resist +50%", delta: "+50% (new)" },
+      { name: "Waste Stove", full: "ATK +10", delta: "+5 ATK (5 -> 10)" },
+      { name: "Wooden Golem", full: "DEF +5", delta: "+4 DEF (1 -> 5)" },
+      { name: "Yellow Novus", full: "MaxHP +2%", delta: "+2% (new)" },
+    ]},
+    { slot: "Left hand / shield", cards: [
+      { name: "Ambernite", full: "DEF +7, MDEF +3", delta: "+5 DEF (2 -> 7), +3 MDEF (new)" },
+      { name: "Andre Egg", full: "MaxHP +10%", delta: "+5% (new)" },
+      { name: "Argos", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Arclouze", full: "[Refine ≤4] MDEF +12", delta: "Removed base DEF+2; MDEF 3 (≤5) -> 12 (≤4)" },
+      { name: "Deniro", full: "DEF +30 (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat DEF +30 added" },
+      { name: "Despero of Thanatos", full: "INT -4 base, +1 INT per refine level", delta: "Base INT -6 -> -4" },
+      { name: "Flame Skull", full: "Stun/Curse/Blind/Stone Curse resist +50% each", delta: "+20% each (30% -> 50%)" },
+      { name: "Hodremlin", full: "Small resist +20%, Medium resist +15%, Large resist +20%", delta: "+5% Small, +5% Large (Medium unchanged)" },
+      { name: "Megalodon", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Munak", full: "DEF +3", delta: "+2 DEF (1 -> 3); Earth resist removed (was +5%)" },
+      { name: "Parasite", full: "DEF +2, Neutral resist +10%", delta: "+1 DEF (1 -> 2), +5% Neutral (5% -> 10%)" },
+      { name: "Sting", full: "All stats +1 · [Refine +7] +1 more (total +2)", delta: "Reworked (was DEF+2, MDEF+5 at refine ≥9)" },
+      { name: "Tamruan", full: "DEF +3", delta: "+1 DEF (2 -> 3)" },
+    ]},
+    { slot: "Garment / shoulder", cards: [
+      { name: "Baphomet Jr.", full: "FLEE +5", delta: "+5 FLEE (new)" },
+      { name: "Choco", full: "FLEE +15", delta: "+5 FLEE (10 -> 15)" },
+      { name: "Chung E", full: "LUK -3 base, +1 LUK / +1 Crit Rate per refine level", delta: "Base LUK -5 -> -3" },
+      { name: "Dragon Fly", full: "AGI +2 · [+ Chonchon] FLEE +20", delta: "+1 AGI (1 -> 2); combo +2 FLEE (18 -> 20)" },
+      { name: "Eclipse", full: "VIT +2 · [+ Lunatic] FLEE +20", delta: "+1 VIT (1 -> 2); combo +2 FLEE (18 -> 20)" },
+      { name: "Mastering", full: "LUK +2 · [+ Poring] FLEE +20", delta: "+1 LUK (1 -> 2); combo +2 FLEE (18 -> 20)" },
+      { name: "Ninetails", full: "AGI +2 · [Refine +7] FLEE +18", delta: "Refine +9 -> +7, FLEE 20 -> 18 (perceived total stays 20 via AGI conversion)" },
+      { name: "Noxious", full: "Long-range dmg resist +15%", delta: "+5% (10% -> 15%)" },
+      { name: "Orc Baby", full: "FLEE +10 · [Refine +7] +2 more (total +12); Neutral resist +10% · [Refine +7] +2% more (total +12%)", delta: "Refine +9 -> +7, bonus +5 -> +2 (both FLEE and Neutral)" },
+      { name: "Roween", full: "ATK dmg vs Water +15%", delta: "+5% (10% -> 15%)" },
+      { name: "Toad", full: "Perfect Dodge +3 · [+ Roda Frog] FLEE +20", delta: "+2 Perfect Dodge (1 -> 3); combo +2 FLEE (18 -> 20)" },
+      { name: "Vagabond Wolf", full: "STR +2 · [+ Wolf] FLEE +20", delta: "+1 STR (1 -> 2); combo +2 FLEE (18 -> 20)" },
+      { name: "Vocal", full: "MDEF +5 · [+ Rocker] FLEE +20", delta: "+2 MDEF (3 -> 5); combo +2 FLEE (18 -> 20)" },
+      { name: "Whisper", full: "Ghost resist penalty removed (was -50%)", delta: "+50% resist (removes vanilla -50% penalty)" },
+    ]},
+    { slot: "Shoes", cards: [
+      { name: "Alarm", full: "MaxHP +400", delta: "+100 (300 -> 400)" },
+      { name: "Freezer", full: "MaxHP +400", delta: "+100 (300 -> 400)" },
+      { name: "Gold Acidus", full: "MaxHP +5%, MaxSP +5% · [Refine ≤4] additional MaxHP +5%, MaxSP +5%, HP/SP Recovery Rate +15%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 15%" },
+      { name: "Ice Titan", full: "VIT +5", delta: "+3 VIT (2 -> 5)" },
+      { name: "Male Thief Bug", full: "AGI +3, FLEE +2", delta: "+1 AGI (2 -> 3), +2 FLEE (new)" },
+      { name: "Megalith", full: "[Refine ≤4] MDEF +7, VIT +2, DEF +4", delta: "Refine ≤5 -> ≤4; added VIT+2/DEF+4" },
+      { name: "Odium of Thanatos", full: "AGI -4 base, +1 AGI per refine level", delta: "Base AGI -5 -> -4" },
+      { name: "Raggler", full: "STR +2, VIT +2", delta: "+1 STR (1 -> 2), +1 VIT (1 -> 2)" },
+      { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1", delta: "+1 DEF (new)" },
+      { name: "Wild Rose", full: "LUK +1", delta: "+1 LUK (new)" },
+      { name: "Zombie Slaughter", full: "ATK dmg vs Demi-Human +5%, MATK dmg vs Demi-Human +5%", delta: "+4% each (1% -> 5%)" },
+    ]},
+    { slot: "Accessory", cards: [
+      { name: "Baby Garm/Hatii", full: "(moved from weapon to accessory slot; stats unchanged)", delta: "Slot reassignment only" },
+      { name: "Galion", full: "ATK dmg vs Water +10%", delta: "+5% (5% -> 10%)" },
+      { name: "Joker", full: "All race resist -20%", delta: "-20% each (new debuff, vs all 10 races)" },
+      { name: "Ragged Zombie", full: "ATK dmg vs Demi-Human +5%, MATK dmg vs Demi-Human +5%", delta: "+4% each (1% -> 5%)" },
+      { name: "Shinobi", full: "Perfect Dodge +1", delta: "+1 (new)" },
+      { name: "Spore", full: "VIT +3", delta: "+1 VIT (2 -> 3)" },
+      { name: "Tarou", full: "ATK +2", delta: "+2 (new)" },
+      { name: "Wormtail", full: "HIT +5", delta: "+5 (new)" },
+      { name: "Zhu Po Long", full: "Crit Rate +4", delta: "+1 (3 -> 4)" },
+    ]},
+  ];
+
+  // Static (equip-independent) — built once and left alone, unlike the
+  // delta panel above which rebuilds on every recompute(). Targets the
+  // static #fullChangelogSection container in index.html (a normal
+  // <div class="main">, not position:absolute like the small per-equip
+  // delta panel) — this table is too large (~100 rows) to float in a
+  // margin without either overflowing or overlapping whatever page content
+  // comes after it, so it lives in normal document flow as its own section
+  // instead, same as every other major section on the page. Single real
+  // <table> throughout (not one table per slot group) so the name/full/
+  // delta columns stay aligned across every group instead of each group
+  // sizing its columns independently.
+  function ensureFullChangelogTable() {
+    var container = document.getElementById("fullChangelogSection");
+    if (!container || container.__cesBuilt) return;
+    container.__cesBuilt = true;
+    var rows = ['<div class="ces-fc-heading">Card</div>'];
+    rows.push('<table class="ces-fc-table"><tbody>');
+    for (var i = 0; i < FULL_CHANGELOG.length; i++) {
+      var group = FULL_CHANGELOG[i];
+      rows.push('<tr class="ces-fc-slot"><td colspan="3">' + group.slot + "</td></tr>");
+      for (var j = 0; j < group.cards.length; j++) {
+        var c = group.cards[j];
+        rows.push(
+          '<tr><td class="ces-card">' + c.name + '</td><td class="ces-fc-full">' + c.full +
+          '</td><td class="ces-fc-delta">' + c.delta + "</td></tr>"
+        );
+      }
+    }
+    rows.push("</tbody></table>");
+    container.innerHTML = rows.join("");
+  }
+
   // --- dedicated summary panel, floating in the wide unused margin to the
   // right of the Equipment & Cards column (that column only uses ~600px of
   // its ~999px-wide container, confirmed via live inspection — not nested
@@ -1350,4 +1522,5 @@
   wrapForcedRecompute("LoadLocal");
   wrapForcedRecompute("URLIN");
   sweep();
+  ensureFullChangelogTable();
 })();
