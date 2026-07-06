@@ -185,7 +185,12 @@
     } else if (e.key === "Tab") closePopup();
     else if (document.activeElement !== openState.input && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       // typing while focus is still on the trigger: hand off to the search
-      // box so filter-by-typing keeps working without an extra click/tab
+      // box so filter-by-typing keeps working without an extra click/tab.
+      // preventDefault is required here: focus() moves onto the input
+      // mid-keydown, so without it the browser's own native key handling
+      // still fires afterward on the newly-focused input and inserts the
+      // same character a second time (the "doubled first letter" bug).
+      e.preventDefault();
       openState.input.focus();
       openState.input.value = e.key;
       applyFilter();
