@@ -315,6 +315,7 @@ table.tborder:has(#A_STPOINT) td:not(.subheader) {
   visibility: hidden;
   opacity: 0;
   width: 200px;
+  white-space: normal;
   background-color: #1d2531;
   color: #e7ecf2;
   text-align: center;
