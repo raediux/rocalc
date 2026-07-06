@@ -1025,10 +1025,41 @@
           if (comboDelta[g2]) applyGlobalDelta(g2, comboDelta[g2]);
         }
       }
+      refreshMaxHPMaxSPDisplay();
       return result;
     };
     patched.__cesPatched = true;
     window.StAllCalc = patched;
+  }
+
+  // n_A_MaxHP/n_A_MaxSP are the only two "Your Character" stats whose
+  // on-screen text is written via myInnerHtml("A_MaxHP"/"A_MaxSP", ...)
+  // INSIDE StAllCalc itself (right after their own late-stage multiplicative
+  // skill/status modifiers), not by calc() afterward the way DEF/STR/etc.
+  // are — confirmed via foot.js: `n_A_MaxHP>=100?n_A_MaxHP>=1e4?myInnerHtml(...)
+  // :myInnerHtml(...):myInnerHtml(...)` and the analogous MaxSP line. Since
+  // every delta mechanism here applies its deltas to window.n_A_MaxHP/
+  // n_A_MaxSP AFTER the original StAllCalc() call has already returned (and
+  // therefore after that DOM write already ran with the pre-patch value),
+  // the "Your Character" panel silently kept showing the stale vanilla
+  // number for every card that touches MaxHP/MaxSP (Savage, Alarm, Freezer,
+  // Apocalypse, Remover, Echio, Banshee, Carat) even though the underlying
+  // global — and therefore anything else that reads it — was always
+  // correct. Re-invoking myInnerHtml here with the exact same formatting
+  // rules vanilla uses (padding under 100/10000) fixes the display without
+  // touching foot.js. Called unconditionally at the end of every recalc
+  // (cheap, and always keeps the display in sync regardless of which
+  // mechanism, if any, touched these two stats this cycle).
+  function refreshMaxHPMaxSPDisplay() {
+    if (typeof window.myInnerHtml !== "function") return;
+    var hp = window.n_A_MaxHP;
+    if (typeof hp === "number") {
+      myInnerHtml("A_MaxHP", hp >= 100 ? (hp >= 1e4 ? " " + hp : hp) : " " + hp, 0);
+    }
+    var sp = window.n_A_MaxSP;
+    if (typeof sp === "number") {
+      myInnerHtml("A_MaxSP", sp >= 100 ? sp : " " + sp, 0);
+    }
   }
 
   function activeCombos(names) {
