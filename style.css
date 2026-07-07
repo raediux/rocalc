@@ -982,13 +982,17 @@ body.t-payon .ces-summary {
   border-spacing: 0 2px;
   table-layout: fixed;
 }
+.ces-fc-col-card {
+  width: 220px;
+}
+.ces-fc-col-full {
+  width: 40%;
+}
 .ces-fc-table .ces-card {
   font-weight: 600;
-  width: 150px;
   padding-right: var(--sp-3);
 }
 .ces-fc-table .ces-fc-full {
-  width: 34%;
   opacity: 0.9;
   padding-right: var(--sp-3);
 }

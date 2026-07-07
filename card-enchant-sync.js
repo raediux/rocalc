@@ -164,6 +164,12 @@
     // Perfect Dodge+3 added in its place (changelog: "Baby_Leopard_Card").
     "Baby Leopard": { n_A_LUK: -3, n_A_LUCKY: 3 },
     "Alarm": { n_A_MaxHP: 100 }, // MaxHP 300->400
+    // Wild Rose's OTHER effect (vanilla "[Thief class] Perfect Dodge +5",
+    // card ID 391) was wrongly flagged "not reflected" in the changelog note
+    // below — confirmed 2026-07-07 it's already fully computed by vanilla
+    // itself: foot.js hardcodes `2==n_A_JobClass()&&391==n_A_card[13]&&
+    // (n_A_LUCKY+=5)`. Live-verified: Thief + Wild Rose in the shoes-card
+    // slot moves n_A_LUCKY from 1.1 to 6.1 (+5), no delta entry needed.
     "Wild Rose": { n_A_LUK: 1 }, // Added 1 LUK
     "Eclipse": { n_A_VIT: 1 }, // VIT 1->2
     // This is "Dancing_Dragon_Card" in the changelog — same card, this
@@ -187,7 +193,8 @@
     // ENGINE_EDIT_SUMMARY below — no entry needed here.
     "Cecil Damon": { n_A_HIT: 33 }, // HIT -30->3 (changelog: "Shecil_Card")
     "Alicel": { n_A_DEF: 5 }, // DEF -5->0
-    // %HP recovery half (10%->20%) has no field, not automatable.
+    // %HP recovery half (10%->20%) — see CODE_DELTAS below (code75), fixed
+    // 2026-07-07 (was wrongly assumed no field existed).
     // Yellow Novus itself (%MaxHP+2) is a pure engine edit now — see
     // ENGINE_EDIT_SUMMARY below — no entry needed here.
 
@@ -207,8 +214,10 @@
     // end value (5) is correct — so the delta is 5 minus this data's real
     // baseline (1), i.e. +4, landing on DEF 5 as intended.
     // The card's other effect (code75 = 30% flat HP-recovery, changelog says
-    // 30%->50%) has NO Additional Enchants field — item/potion recovery% is
-    // not automatable this way (same gap as Eggyra/Muka/Zombie) — not included.
+    // 30%->50%) — see CODE_DELTAS below, fixed 2026-07-07 (was wrongly
+    // assumed not automatable; code75 is NATURAL HP regen, not item/potion
+    // recovery% — a real, different field from the genuinely-unautomatable
+    // Eggyra/Muka/Zombie gap).
     "Wooden Golem": { n_A_DEF: 4 }, // DEF 1->5
 
     // "Not yet triaged" pile (2026-07-06) — Ray asked for a full audit
@@ -333,6 +342,13 @@
     // directly — my first attempt showed "no effect" only because the one
     // sidebar text line I was checking doesn't redraw from a plain recalc,
     // not because the field is inert.
+    // Mobster's OTHER effect (vanilla "[Thief class] CRIT+4", card ID 328)
+    // was wrongly flagged "not reflected" in the changelog note below —
+    // confirmed 2026-07-07 it's already fully computed by vanilla itself:
+    // foot.js hardcodes `2==n_A_JobClass()&&(I+=4*CardNumSearch(328))`
+    // feeding straight into `n_A_CRI+=I`. Live-verified: Thief + Mobster
+    // equipped moves n_A_CRI from 1 to 5 (+4), no engine edit or delta entry
+    // needed — the changelog doesn't change this value, just restates it.
     "Mobster": [{ code: 70, delta: 3, label: "+3% Crit Dmg (15%->18%)" }],
     // code78 ("% Long-range ATK and MATK based damage resistance") is
     // reached via the SAME generic dispatch loop that a narrow text search
@@ -340,6 +356,21 @@
     // existed. Noxious's own vanilla contribution reads exactly 10
     // (matching the changelog's stated baseline).
     "Noxious": [{ code: 78, delta: 5, label: "+5% Long-range dmg resist (10%->15%)" }],
+    // Wooden Golem/Yellow Novus's "HP recovery rate% not reflected" notes
+    // were WRONG, corrected 2026-07-07 — the earlier "no field for item/
+    // potion recovery%" policy (see the header comment near STAT_DELTAS)
+    // conflated NATURAL HP regen (code75, which these cards actually use)
+    // with potion/item healing effectiveness (which genuinely has no
+    // field). code75 feeds `n_tok[75]` through the SAME generic StPlusCard
+    // dispatch loop as every other CODE_DELTAS entry, straight into
+    // `n_A_HPR` (foot.js: `I=100,I+=n_tok[75]+n_A_Buf9[45],...,
+    // n_A_HPR=Math.floor(n_A_HPR*I/100)`) — a real, displayed stat. Confirmed
+    // live with a boosted VIT/MaxHP to make the multiplier visible past
+    // flooring: Wooden Golem alone moved n_A_HPR from 22 to 28 (+30%,
+    // matching its unconditional vanilla base); patching code75 by a
+    // further +20 moved it to 33 (+50% total), confirming the delta math.
+    "Wooden Golem": [{ code: 75, delta: 20, label: "+20% HP Recovery Rate (30%->50%)" }],
+    "Yellow Novus": [{ code: 75, delta: 10, label: "+10% HP Recovery Rate (10%->20%)" }],
     // Deviace (weapon card): vanilla already gives +7% ATK dmg vs Brute(32),
     // Plant(33), Insect(34), Demi-Human(37) via its own card codes — matches
     // [20,1,"Deviace",0,37,7,32,7,33,7,34,7,0] exactly. Changelog: "Changed
@@ -934,11 +965,17 @@
   // block) — no engine edit needed, just a job-gated delta like everything
   // else here.
   // Fur Seal's OTHER changelog line ("Class CRIT 9->10 vs Undead/Demon,
-  // Acolyte only") was investigated and found to have ZERO engine hook at
-  // all — `CardNumSearch(253)` (Fur Seal's own card ID) appears nowhere in
-  // foot.js. Unlike Carat/Gibbet's head1-vs-head2 dead-code traps (where a
-  // real but misrouted check existed), this is pure flavor text with no
-  // hardcoded implementation whatsoever — not automatable, nothing to patch.
+  // Acolyte only") — corrected 2026-07-07, the original "zero engine hook"
+  // conclusion above was WRONG (found via a narrow literal-text search for
+  // `CardNumSearch(253)` alone, which missed a match sitting inside a
+  // longer comma expression). The real hook: foot.js's `n_A_CRI` block has
+  // `3!=n_A_JobClass()||1!=n_B[2]&&6!=n_B[2]||(I+=9*CardNumSearch(253))`
+  // feeding straight into `n_A_CRI+=I` — `n_B[2]` is the selected target
+  // monster's race (v_Race index; 1=Undead, 6=Demon), confirmed live:
+  // Acolyte+Fur Seal equipped moves n_A_CRI from 1 to 10 (+9) against an
+  // Undead target (Archer Skeleton) AND a Demon target (Aliot), and drops
+  // back to +0 with a non-Acolyte job. Same "job-conditional" shape as
+  // Banshee/Agav/Echio below, just also gated on the selected enemy's race.
   var JOB_CARD_DELTAS = {
     // Banshee: Mage-only MaxHP-100 -> MaxHP-20 (changelog only touches this
     // half; its MaxSP+100 and skill-dmg% aren't mentioned, left alone).
@@ -949,10 +986,13 @@
     "Agav": { job: 5, global: "n_A_MaxSP", vanilla: 100, custom: 200 },
     // Echio: Swordsman-only MaxHP+500 -> +750.
     "Echio": { job: 1, global: "n_A_MaxHP", vanilla: 500, custom: 750 },
+    // Fur Seal: Acolyte-only, vs Undead(1)/Demon(6) target race, CRIT+9 -> +10.
+    "Fur Seal": { job: 3, races: [1, 6], global: "n_A_CRI", vanilla: 9, custom: 10 },
   };
 
   function jobCardDelta(rule) {
     if ((window.n_A_JobClass && n_A_JobClass()) !== rule.job) return null;
+    if (rule.races && (!window.n_B || rule.races.indexOf(n_B[2]) === -1)) return null;
     var delta = {};
     delta[rule.global] = rule.custom - rule.vanilla;
     return delta;
@@ -1171,14 +1211,14 @@
   // small delta panel either) — both added there too.
   var FULL_CHANGELOG = [
     { slot: "Headgear", cards: [
-      { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20 (Soul Strike/Napalm Beat/Napalm Vulcan dmg +20% not reflected)", delta: "MaxHP -100 -> -20 (Mage only)" },
+      { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20 (Soul Strike/Napalm Beat/Napalm Vulcan dmg +20%)", delta: "MaxHP -100 -> -20 (Mage only)" },
       { name: "Blue Acidus", full: "MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
       { name: "Carat", full: "INT +2 · [Refine +7] MaxSP +100", delta: "Refine +9 -> +7, 150 -> 100 SP" },
       { name: "Coco", full: "DEF +3, Sleep resist +30%", delta: "+2 DEF (1 -> 3), +10% Sleep resist (20% -> 30%)" },
       { name: "Ghoul", full: "DEF +3, Poison resist +30%", delta: "+2 DEF (1 -> 3), +10% Poison resist (20% -> 30%)" },
       { name: "Gibbet", full: "[Refine ≤4] MDEF +7", delta: "MDEF +5 (unconditional) -> +7 (refine ≤4 only)" },
       { name: "Kathryne Keyron", full: "Cast Time -1%/refine · [Refine +7] MATK +2%", delta: "Refine +9 -> +7 (value unchanged)" },
-      { name: "Knocker", full: "ATK dmg vs Formless +10% (0.1%->1% Elunium/Oridecon drop chance not reflected)", delta: "+5% (5% -> 10%)" },
+      { name: "Knocker", full: "ATK dmg vs Formless +10% (0.1%->1% Elunium/Oridecon drop chance)", delta: "+5% (5% -> 10%)" },
       { name: "Martin", full: "DEF +3, Blind resist +30%", delta: "+2 DEF (1 -> 3), +10% Blind resist (20% -> 30%)" },
       { name: "Permeter", full: "+15% resist vs Shadow, Undead, Ghost", delta: "+15% Ghost (new)" },
       { name: "Seyren Windsor", full: "STR -4 base, +1 STR per refine level", delta: "Base STR -6 -> -4" },
@@ -1190,13 +1230,13 @@
       { name: "Cecil Damon", full: "ASPD +5%, HIT +3", delta: "+33 HIT (-30 -> 3)" },
       { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "Was Brute/Plant/Insect/Demi-Human only" },
       { name: "Female Thief Bug", full: "AGI +2, FLEE +1", delta: "+1 AGI (1 -> 2)" },
-      { name: "Fur Seal", full: "HIT +12, FLEE +4", delta: "+2 HIT (10->12), +1 FLEE (3->4)" },
+      { name: "Fur Seal", full: "HIT +12, FLEE +4, [Acolyte only] CRIT +10 vs Undead/Demon", delta: "+2 HIT (10->12), +1 FLEE (3->4), +1 CRIT vs Undead/Demon (9->10, Acolyte only)" },
       { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
       { name: "Hornet", full: "STR +1, ATK +10", delta: "+7 ATK (3 -> 10)" },
       { name: "Howard Alt-Eisen", full: "HIT +30, ASPD +1 (was -5)", delta: "+6 ASPD" },
       { name: "Lunatic", full: "LUK +3, Crit Rate +1, Perfect Dodge +1", delta: "+2 LUK (1 -> 3)" },
-      { name: "Mobster", full: "Crit Dmg +18% ([Thief only] CRIT+4 not reflected)", delta: "+3% (15% -> 18%)" },
-      { name: "Mutant Dragonoid", full: "ATK +20 (grants Fireball skill, L3->L5 per changelog, not reflected)", delta: "+5 ATK (15 -> 20)" },
+      { name: "Mobster", full: "Crit Dmg +18%, [Thief only] CRIT+4", delta: "+3% (15% -> 18%)" },
+      { name: "Mutant Dragonoid", full: "ATK +20 (grants Fireball skill, L3->L5 per changelog)", delta: "+5 ATK (15 -> 20)" },
       { name: "Piere", full: "INT +1, MaxSP +10 (renamed from Andre Larva)", delta: "Renamed, now drops from Piere" },
       { name: "Soldier Skeleton", full: "Crit Rate +10", delta: "+1 (9 -> 10)" },
       { name: "Stone Shooter", full: "ATK +15, HIT +15", delta: "+5 ATK, +5 HIT (10 -> 15 each)" },
@@ -1209,8 +1249,8 @@
       { name: "Apocalypse", full: "VIT +2 · [Refine +7] MaxHP +800", delta: "Refine +9 -> +7 (value unchanged)" },
       { name: "Archdam", full: "ATK +10, Cast time -10%", delta: "-10% (was -20%)" },
       { name: "Baby Desert Wolf", full: "INT +1, MATK +1%", delta: "+1% MATK (new)" },
-      { name: "Baby Leopard", full: "Perfect Dodge +3 ([Merchant only] armor unbreakable not reflected)", delta: "LUK +3 removed, Perfect Dodge +3 added" },
-      { name: "Cornutus", full: "DEF +5 (armor unbreakable, not reflected)", delta: "+4 DEF (1 -> 5)" },
+      { name: "Baby Leopard", full: "Perfect Dodge +3 ([Merchant only] armor unbreakable)", delta: "LUK +3 removed, Perfect Dodge +3 added" },
+      { name: "Cornutus", full: "DEF +5 (armor unbreakable)", delta: "+4 DEF (1 -> 5)" },
       { name: "Dimik", full: "VIT +0 base, +1 VIT per refine level", delta: "Base VIT -5 -> 0 (removed)" },
       { name: "Echio", full: "ATK +15, [Swordsman only] MaxHP +750", delta: "+500 -> +750 (Swordsman only)" },
       { name: "Egnigem Cenia", full: "STR/15 -> DEX +1 (cycle)", delta: "Reassigned: was INT/18->STR, now STR/15->DEX" },
@@ -1228,8 +1268,8 @@
       { name: "Venatu", full: "INT/15 -> LUK +1 (cycle)", delta: "Reassigned: was AGI/18->LUK, now INT/15->LUK" },
       { name: "Venomous", full: "Poison resist +50% (offsets a 30% self-Poison proc, not otherwise reflected)", delta: "+50% (new)" },
       { name: "Waste Stove", full: "INT +1, ATK +10", delta: "+5 ATK (5 -> 10)" },
-      { name: "Wooden Golem", full: "DEF +5 (30%->50% HP recovery rate not reflected)", delta: "+4 DEF (1 -> 5)" },
-      { name: "Yellow Novus", full: "MaxHP +500, MaxHP +2% (10%->20% HP recovery rate not reflected)", delta: "+2% (new)" },
+      { name: "Wooden Golem", full: "DEF +5, HP Recovery Rate +50%", delta: "+4 DEF (1 -> 5), +20% HP Recovery Rate (30% -> 50%)" },
+      { name: "Yellow Novus", full: "MaxHP +500, MaxHP +2%, HP Recovery Rate +20%", delta: "+2% MaxHP (new), +10% HP Recovery Rate (10% -> 20%)" },
     ]},
     { slot: "Left hand / shield", cards: [
       { name: "Ambernite", full: "DEF +7, MDEF +3", delta: "+5 DEF (2 -> 7), +3 MDEF (new)" },
@@ -1238,17 +1278,17 @@
       { name: "Arclouze", full: "[Refine ≤4] MDEF +12", delta: "Removed base DEF+2; MDEF 3 (≤5) -> 12 (≤4)" },
       { name: "Deniro", full: "DEF +30 (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat DEF +30 added" },
       { name: "Despero of Thanatos", full: "INT -4 base, +1 INT per refine level", delta: "Base INT -6 -> -4" },
-      { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse (also 5% chance each to inflict these on your attacker when hit, not reflected)", delta: "+20% each (30% -> 50%)" },
-      { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium (also 0.3% chance for temporary +30 Perfect Dodge for 10s, not reflected)", delta: "+5% Small, +5% Large (Medium unchanged)" },
+      { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse (also 5% chance each to inflict these on your attacker when hit)", delta: "+20% each (30% -> 50%)" },
+      { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium (also 0.3% chance for temporary +30 Perfect Dodge for 10s)", delta: "+5% Small, +5% Large (Medium unchanged)" },
       { name: "Megalodon", full: "DEF +3, Freeze resist +30%", delta: "+2 DEF (1 -> 3), +10% Freeze resist (20% -> 30%)" },
-      { name: "Munak", full: "DEF +3 (Earth and Stone Curse resist removed; +30% resist vs some Payon mobs not reflected)", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
+      { name: "Munak", full: "DEF +3 (Earth and Stone Curse resist removed; +30% resist vs some Payon mobs)", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
       { name: "Parasite", full: "DEF +2, Neutral resist +10%", delta: "+1 DEF (1 -> 2), +5% Neutral (5% -> 10%)" },
       { name: "Sting", full: "All stats +1 · [Refine +7] +1 more (total +2)", delta: "Reworked (was DEF+2, MDEF+5 at refine ≥9)" },
-      { name: "Tamruan", full: "DEF +3 (10%->25% more dmg with Shield Charge/Boomerang not reflected)", delta: "+1 DEF (2 -> 3)" },
+      { name: "Tamruan", full: "DEF +3 (10%->25% more dmg with Shield Charge/Boomerang)", delta: "+1 DEF (2 -> 3)" },
     ]},
     { slot: "Garment / shoulder", cards: [
       { name: "Baphomet Jr.", full: "AGI +3, Crit Rate +1, FLEE +5", delta: "+5 FLEE (new)" },
-      { name: "Choco", full: "FLEE +15, Perfect Dodge +5 (banana juice/Provoke skill not reflected)", delta: "+5 FLEE (10 -> 15)" },
+      { name: "Choco", full: "FLEE +15, Perfect Dodge +5 (banana juice/Provoke skill)", delta: "+5 FLEE (10 -> 15)" },
       { name: "Chung E", full: "LUK -3 base, +1 LUK / +1 Crit Rate per refine level", delta: "Base LUK -5 -> -3" },
       { name: "Dragon Fly", full: "AGI +2 · [+ Chonchon] FLEE +20", delta: "+1 AGI (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Eclipse", full: "VIT +2 · [+ Lunatic] FLEE +20", delta: "+1 VIT (1 -> 2); combo +2 FLEE (18 -> 20)" },
@@ -1264,23 +1304,23 @@
     ]},
     { slot: "Shoes", cards: [
       { name: "Alarm", full: "VIT +1, MaxHP +400", delta: "+100 (300 -> 400)" },
-      { name: "Freezer", full: "MaxHP +400 (+10% dmg with Bash at refine 9-10 not reflected)", delta: "+100 (300 -> 400)" },
+      { name: "Freezer", full: "MaxHP +400 (+10% dmg with Bash at refine 9-10)", delta: "+100 (300 -> 400)" },
       { name: "Gold Acidus", full: "MaxHP/MaxSP +5% · [Refine ≤4] +5% more each, HP/SP Recovery Rate +15%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 15%" },
-      { name: "Ice Titan", full: "VIT +5 (0.3%->5% chance for temporary +10->15 DEF for 10s, not reflected)", delta: "+3 VIT (2 -> 5)" },
+      { name: "Ice Titan", full: "VIT +5 (0.3%->5% chance for temporary +10->15 DEF for 10s)", delta: "+3 VIT (2 -> 5)" },
       { name: "Male Thief Bug", full: "AGI +3, FLEE +2", delta: "+1 AGI (2 -> 3), +2 FLEE (new)" },
       { name: "Megalith", full: "[Refine ≤4] MDEF +7, VIT +2, DEF +4", delta: "Refine ≤5 -> ≤4; added VIT+2/DEF+4" },
       { name: "Odium of Thanatos", full: "AGI -4 base, +1 AGI per refine level", delta: "Base AGI -5 -> -4" },
       { name: "Raggler", full: "STR +2, VIT +2", delta: "+1 STR (1 -> 2), +1 VIT (1 -> 2)" },
-      { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1 (3% chance to cast Turn Undead via Skull Ring combo not reflected)", delta: "+1 DEF (new)" },
-      { name: "Wild Rose", full: "AGI +1, LUK +1 ([Thief only] Perfect Dodge +5 not reflected)", delta: "+1 LUK (new)" },
-      { name: "Zombie Slaughter", full: "+5% ATK/MATK dmg vs Demi-Human (50->100 HP per kill proc not reflected)", delta: "+4% each (1% -> 5%)" },
+      { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1 (3% chance to cast Turn Undead via Skull Ring combo)", delta: "+1 DEF (new)" },
+      { name: "Wild Rose", full: "AGI +1, LUK +1, [Thief only] Perfect Dodge +5", delta: "+1 LUK (new)" },
+      { name: "Zombie Slaughter", full: "+5% ATK/MATK dmg vs Demi-Human (50->100 HP per kill proc)", delta: "+4% each (1% -> 5%)" },
     ]},
     { slot: "Accessory", cards: [
       { name: "Baby Garm/Hatii", full: "(moved from weapon to accessory slot)", delta: "Slot reassignment only" },
       { name: "Galion", full: "HIT +5, ATK dmg vs Water +10%", delta: "+5% (5% -> 10%)" },
-      { name: "Joker", full: "All race resist -20% (grants Gank skill, 7% auto-steal, not reflected)", delta: "-20% each (new debuff, vs all 10 races)" },
-      { name: "Ragged Zombie", full: "+5% ATK/MATK dmg vs Demi-Human (0.1%->2% Bleeding-on-hit chance not reflected)", delta: "+4% each (1% -> 5%)" },
-      { name: "Shinobi", full: "AGI +1, Perfect Dodge +1 (cloak/Shuriken proc-on-hit not reflected)", delta: "+1 (new)" },
+      { name: "Joker", full: "All race resist -20% (grants Gank skill, 7% auto-steal)", delta: "-20% each (new debuff, vs all 10 races)" },
+      { name: "Ragged Zombie", full: "+5% ATK/MATK dmg vs Demi-Human (0.1%->2% Bleeding-on-hit chance)", delta: "+4% each (1% -> 5%)" },
+      { name: "Shinobi", full: "AGI +1, Perfect Dodge +1 (cloak/Shuriken proc-on-hit)", delta: "+1 (new)" },
       { name: "Spore", full: "VIT +3", delta: "+1 VIT (2 -> 3)" },
       { name: "Tarou", full: "STR +2, ATK +2", delta: "+2 (new)" },
       { name: "Wormtail", full: "DEX +2, HIT +5", delta: "+5 (new)" },
@@ -1314,7 +1354,13 @@
     if (!container || container.__cesBuilt) return;
     container.__cesBuilt = true;
     var rows = ['<div class="ces-fc-heading">Card</div>'];
-    rows.push('<table class="ces-fc-table"><tbody>');
+    // Explicit <colgroup> widths, not just CSS on the <td>s — needed because
+    // the slot-header rows below use a single colspan=3 cell, which breaks
+    // table-layout:fixed's usual "read widths off the first row" column
+    // sizing (confirmed live: without this, .ces-card rendered at ~268px
+    // despite its CSS width being set to 110px).
+    rows.push('<table class="ces-fc-table"><colgroup><col class="ces-fc-col-card">' +
+      '<col class="ces-fc-col-full"><col class="ces-fc-col-delta"></colgroup><tbody>');
     for (var i = 0; i < FULL_CHANGELOG.length; i++) {
       var group = FULL_CHANGELOG[i];
       rows.push('<tr class="ces-fc-slot"><td colspan="3">' + group.slot + "</td></tr>");
@@ -1472,11 +1518,11 @@
       perCard[names[i5]].conversion = convParts.length ? convParts : ["no change"];
     }
 
-    // Bucket D (job-conditional) — purely for the display text, same
-    // caveat as REFINE_DELTAS/STAT_CONVERSION_DELTAS above (recomputed on
-    // every card-slot change, which covers the common case; doesn't rebind
-    // to the job-class selector itself since changing job usually implies
-    // re-equipping anyway).
+    // Bucket D (job-conditional) — purely for the display text (the real
+    // math is always correct regardless of trigger, same as REFINE_DELTAS,
+    // since StAllCalc is patched directly). A_JOB and B_Enemy (needed for
+    // Fur Seal's race gate) are both bound to recompute() below so this
+    // text doesn't go stale when job/target changes without a card re-equip.
     for (var i6 = 0; i6 < names.length; i6++) {
       var jobRule2 = JOB_CARD_DELTAS[names[i6]];
       if (!jobRule2) continue;
@@ -1484,7 +1530,8 @@
       perCard[names[i6]] = perCard[names[i6]] || {};
       perCard[names[i6]].job = jobDelta2
         ? describeRefineDelta(jobDelta2)
-        : ["no change (job-conditional, current job doesn't match)"];
+        : ["no change (conditional bonus not currently active — check job" +
+           (jobRule2.races ? "/target race" : "") + ")"];
     }
 
     // Cards whose entire effect is a pure engine edit (no delta to compute
@@ -1518,6 +1565,11 @@
   var REFINE_FIELDS = [
     "A_Weapon_refine", "A_HEAD_REFINE", "A_LEFT_REFINE",
     "A_BODY_REFINE", "A_SHOULDER_REFINE", "A_SHOES_REFINE",
+    // A_JOB/B_Enemy added 2026-07-07 for JOB_CARD_DELTAS (Bucket D): keeps
+    // the summary text fresh when job or target monster changes without
+    // also touching a card slot — needed once Fur Seal added a race-gated
+    // (B_Enemy-dependent) rule alongside the plain job-gated ones.
+    "A_JOB", "B_Enemy",
   ];
 
   function bindRefineField(name) {
