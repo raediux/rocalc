@@ -984,11 +984,11 @@ body.t-payon .ces-summary {
 }
 .ces-fc-table .ces-card {
   font-weight: 600;
-  width: 180px;
+  width: 150px;
   padding-right: var(--sp-3);
 }
 .ces-fc-table .ces-fc-full {
-  width: 45%;
+  width: 34%;
   opacity: 0.9;
   padding-right: var(--sp-3);
 }
