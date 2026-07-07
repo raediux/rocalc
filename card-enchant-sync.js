@@ -577,12 +577,23 @@
     //   calculator has no separate PvE/PvP race-resist split. Ray confirmed:
     //   this calc is PvE-only, leave at vanilla 30%, no delta.
 
-    // Bucket C (2026-07-06) — Sting and Arclouze both REMOVE their vanilla
-    // unconditional DEF+2 (m_Card code18, applied via the normal generic
-    // StPlusCard path) as part of a full rework. Canceled here; their
-    // refine-conditional replacements live in REFINE_DELTAS below.
+    // Bucket C (2026-07-06) — Sting removes its vanilla unconditional DEF+2
+    // (m_Card code18=2, a real generic code pair in its own array, applied
+    // via the normal StPlusCard path) as part of a full rework. Canceled
+    // here; its refine-conditional replacement lives in REFINE_DELTAS below.
+    // CORRECTION 2026-07-07: Arclouze's DEF+2 was WRONGLY treated the same
+    // way — its own m_Card array has NO code pairs at all (confirmed via
+    // the raw data: `[222,3,"Arclouze","[Refine Rate 0~5] DEF +2, MDEF
+    // +3",0]`, a bare "0" terminator). Its real DEF+2 is hardcoded by card
+    // ID instead, and — unlike what the old CODE_DELTAS entry assumed — is
+    // REFINE-GATED, not unconditional: `n_A_LEFT_REFINE<=5&&222==
+    // n_A_card[10]&&(n_A_DEF+=2)`, sitting right next to the already-known
+    // MDEF+3 refine-gated line. Canceling it as a flat -2 via CODE_DELTAS
+    // was wrong at any refine above 5, where vanilla never granted the +2
+    // in the first place — live-tested and confirmed: at refine 9, DEF
+    // came out to -2 instead of 0. Moved into REFINE_DELTAS below so the
+    // cancellation is refine-aware like the real vanilla check.
     "Sting": [{ code: 18, delta: -2, label: "-2 DEF (removed, card reworked)" }],
-    "Arclouze": [{ code: 18, delta: -2, label: "-2 DEF (removed, card reworked)" }],
 
     // Chung E (garment): vanilla LUK-5 base (m_Card code6=-5, confirmed via
     // [402,5,"Chung E","<b>For each refine level:</b> LUK +1, CRIT +1",6,-5,0])
@@ -720,18 +731,28 @@
         };
       },
     },
-    // Arclouze (left/accessory slot): vanilla refine<=5 gives MDEF+3
-    // (confirmed via foot.js: "n_A_LEFT_REFINE <= 5 && 222 == n_A_card[10]")
-    // plus its separate unconditional DEF+2 (code18, canceled via
-    // CODE_DELTAS above per the changelog's "Removed DEF"). Changelog:
-    // "when +4 or less give 12 MDEF" — threshold tightens to <=4, value
+    // Arclouze (left/accessory slot): vanilla refine<=5 gives BOTH DEF+2
+    // and MDEF+3 (confirmed via foot.js — both hardcoded by card ID under
+    // the SAME refine<=5 condition: "n_A_LEFT_REFINE<=5&&222==n_A_card[10]
+    // &&(n_A_DEF+=2)" and the matching MDEF+3 line). CORRECTION 2026-07-07:
+    // an earlier pass wrongly treated the DEF+2 as a separate, unconditional
+    // generic code (canceled via a flat CODE_DELTAS -2) — Arclouze's own
+    // m_Card array actually has NO code pairs at all, so that DEF+2 was
+    // never a generic code to begin with, and critically it's refine-gated
+    // just like the MDEF. Canceling it unconditionally caused a real bug:
+    // at refine 9 (above the threshold), DEF came out to -2 instead of 0,
+    // subtracting a bonus vanilla never granted at that refine level.
+    // Changelog: "Removed DEF. when +4 or less give 12 MDEF" — DEF is
+    // removed at every refine level (cancel vDEF whenever it's vanilla-
+    // active), threshold for the MDEF replacement tightens to <=4, value
     // rises to 12.
     "Arclouze": {
       refineVar: "n_A_LEFT_REFINE",
       apply: function (refine) {
+        var vDEF = refine <= 5 ? 2 : 0;
         var vMDEF = refine <= 5 ? 3 : 0;
         var nMDEF = refine <= 4 ? 12 : 0;
-        return { n_A_MDEF: nMDEF - vMDEF };
+        return { n_A_DEF: 0 - vDEF, n_A_MDEF: nMDEF - vMDEF };
       },
     },
     // Apocalypse (body): vanilla VIT+2 (code3, unaffected, unconditional)
@@ -1150,14 +1171,14 @@
   // small delta panel either) — both added there too.
   var FULL_CHANGELOG = [
     { slot: "Headgear", cards: [
-      { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20", delta: "MaxHP -100 -> -20 (Mage only)" },
-      { name: "Blue Acidus", full: "[Refine ≤4] MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
+      { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20 (Soul Strike/Napalm Beat/Napalm Vulcan dmg +20% not reflected)", delta: "MaxHP -100 -> -20 (Mage only)" },
+      { name: "Blue Acidus", full: "MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
       { name: "Carat", full: "INT +2 · [Refine +7] MaxSP +100", delta: "Refine +9 -> +7, 150 -> 100 SP" },
       { name: "Coco", full: "DEF +3, Sleep resist +30%", delta: "+2 DEF (1 -> 3), +10% Sleep resist (20% -> 30%)" },
       { name: "Ghoul", full: "DEF +3, Poison resist +30%", delta: "+2 DEF (1 -> 3), +10% Poison resist (20% -> 30%)" },
       { name: "Gibbet", full: "[Refine ≤4] MDEF +7", delta: "MDEF +5 (unconditional) -> +7 (refine ≤4 only)" },
       { name: "Kathryne Keyron", full: "Cast Time -1%/refine · [Refine +7] MATK +2%", delta: "Refine +9 -> +7 (value unchanged)" },
-      { name: "Knocker", full: "ATK dmg vs Formless +10%", delta: "+5% (5% -> 10%)" },
+      { name: "Knocker", full: "ATK dmg vs Formless +10% (0.1%->1% Elunium/Oridecon drop chance not reflected)", delta: "+5% (5% -> 10%)" },
       { name: "Martin", full: "DEF +3, Blind resist +30%", delta: "+2 DEF (1 -> 3), +10% Blind resist (20% -> 30%)" },
       { name: "Permeter", full: "+15% resist vs Shadow, Undead, Ghost", delta: "+15% Ghost (new)" },
       { name: "Seyren Windsor", full: "STR -4 base, +1 STR per refine level", delta: "Base STR -6 -> -4" },
@@ -1166,49 +1187,49 @@
       { name: "Wootan Shooter", full: "DEF +3, Confusion resist +30%", delta: "+2 DEF (1 -> 3), +10% Confusion resist (20% -> 30%)" },
     ]},
     { slot: "Weapon", cards: [
-      { name: "Cecil Damon", full: "HIT +3", delta: "+33 HIT (-30 -> 3)" },
+      { name: "Cecil Damon", full: "ASPD +5% (unaffected), HIT +3", delta: "+33 HIT (-30 -> 3)" },
       { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "Was Brute/Plant/Insect/Demi-Human only" },
-      { name: "Female Thief Bug", full: "AGI +2", delta: "+1 AGI (1 -> 2)" },
+      { name: "Female Thief Bug", full: "AGI +2, FLEE +1 (unaffected)", delta: "+1 AGI (1 -> 2)" },
       { name: "Fur Seal", full: "HIT +12, FLEE +4", delta: "+2 HIT (10->12), +1 FLEE (3->4)" },
       { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
-      { name: "Hornet", full: "ATK +10", delta: "+7 ATK (3 -> 10)" },
-      { name: "Howard Alt-Eisen", full: "ASPD +1 (was -5)", delta: "+6 ASPD" },
-      { name: "Lunatic", full: "LUK +3", delta: "+2 LUK (1 -> 3)" },
-      { name: "Mobster", full: "Crit Dmg +18%", delta: "+3% (15% -> 18%)" },
-      { name: "Mutant Dragonoid", full: "ATK +20", delta: "+5 ATK (15 -> 20)" },
-      { name: "Piere", full: "(renamed from Andre Larva; stats unchanged)", delta: "Renamed, now drops from Piere" },
+      { name: "Hornet", full: "STR +1 (unaffected), ATK +10", delta: "+7 ATK (3 -> 10)" },
+      { name: "Howard Alt-Eisen", full: "HIT +30 (unaffected), ASPD +1 (was -5)", delta: "+6 ASPD" },
+      { name: "Lunatic", full: "LUK +3, Crit Rate +1 (unaffected), Perfect Dodge +1 (unaffected)", delta: "+2 LUK (1 -> 3)" },
+      { name: "Mobster", full: "Crit Dmg +18% ([Thief only] CRIT+4 not reflected)", delta: "+3% (15% -> 18%)" },
+      { name: "Mutant Dragonoid", full: "ATK +20 (grants Fireball skill, L3->L5 per changelog, not reflected)", delta: "+5 ATK (15 -> 20)" },
+      { name: "Piere", full: "INT +1, MaxSP +10 (renamed from Andre Larva, stats unchanged)", delta: "Renamed, now drops from Piere" },
       { name: "Soldier Skeleton", full: "Crit Rate +10", delta: "+1 (9 -> 10)" },
       { name: "Stone Shooter", full: "ATK +15, HIT +15", delta: "+5 ATK, +5 HIT (10 -> 15 each)" },
       { name: "Zenorc", full: "ATK +12", delta: "+2 ATK (10 -> 12)" },
     ]},
     { slot: "Body", cards: [
       { name: "Agav", full: "DEF -3 · [Mage only] MaxSP +200", delta: "+7 DEF (-10 -> -3); MaxSP +100 -> +200 (Mage only)" },
-      { name: "Alicel", full: "DEF penalty removed (was -5)", delta: "+5 DEF" },
+      { name: "Alicel", full: "FLEE +10 (unaffected), DEF penalty removed (was -5)", delta: "+5 DEF" },
       { name: "Ancient Mimic", full: "LUK/15 -> STR +1 (cycle)", delta: "Reassigned: was LUK/18->AGI, now LUK/15->STR" },
       { name: "Apocalypse", full: "VIT +2 · [Refine +7] MaxHP +800", delta: "Refine +9 -> +7 (value unchanged)" },
-      { name: "Archdam", full: "Cast time -10%", delta: "-10% (was -20%)" },
-      { name: "Baby Desert Wolf", full: "MATK +1%", delta: "+1% MATK (new)" },
-      { name: "Baby Leopard", full: "Perfect Dodge +3", delta: "LUK +3 removed, Perfect Dodge +3 added" },
-      { name: "Cornutus", full: "DEF +5", delta: "+4 DEF (1 -> 5)" },
+      { name: "Archdam", full: "ATK +10 (unaffected), Cast time -10%", delta: "-10% (was -20%)" },
+      { name: "Baby Desert Wolf", full: "INT +1 (unaffected), MATK +1%", delta: "+1% MATK (new)" },
+      { name: "Baby Leopard", full: "Perfect Dodge +3 ([Merchant only] armor unbreakable not reflected)", delta: "LUK +3 removed, Perfect Dodge +3 added" },
+      { name: "Cornutus", full: "DEF +5 (armor unbreakable, not reflected)", delta: "+4 DEF (1 -> 5)" },
       { name: "Dimik", full: "VIT +0 base, +1 VIT per refine level", delta: "Base VIT -5 -> 0 (removed)" },
-      { name: "Echio", full: "[Swordsman only] MaxHP +750", delta: "+500 -> +750 (Swordsman only)" },
+      { name: "Echio", full: "ATK +15 (unaffected), [Swordsman only] MaxHP +750", delta: "+500 -> +750 (Swordsman only)" },
       { name: "Egnigem Cenia", full: "STR/15 -> DEX +1 (cycle)", delta: "Reassigned: was INT/18->STR, now STR/15->DEX" },
       { name: "Goat", full: "[Refine ≤4] DEF +5, MDEF +7", delta: "Refine ≤5 -> ≤4; DEF+2/MDEF+5 -> DEF+5/MDEF+7" },
       { name: "Mineral", full: "ATK -5, DEF +7", delta: "+20 ATK (-25 -> -5), +4 DEF (3 -> 7)" },
       { name: "Mistress of Shelter", full: "DEX/15 -> VIT +1 (cycle)", delta: "Reassigned: was STR/18->INT, now DEX/15->VIT" },
       { name: "Obsidian", full: "VIT/15 -> AGI +1 (cycle)", delta: "Reassigned: was DEX/18->VIT, now VIT/15->AGI" },
       { name: "Observation", full: "AGI/15 -> INT +1 (cycle)", delta: "Reassigned: was VIT/18->DEX, now AGI/15->INT" },
-      { name: "Red Novus", full: "Confusion resist +50%", delta: "+50% (new)" },
+      { name: "Red Novus", full: "Confusion resist +50% (offsets a 30% self-Chaos proc, not otherwise reflected)", delta: "+50% (new)" },
       { name: "Remover", full: "MaxHP +800 base, -20/refine", delta: "-40/refine -> -20/refine" },
       { name: "Savage", full: "VIT +5, MaxHP +200", delta: "+2 VIT (3 -> 5), +200 MaxHP (new)" },
-      { name: "Skogul", full: "Bleeding resist +50%", delta: "+50% (new)" },
-      { name: "Super Picky", full: "VIT +3", delta: "+2 VIT (1 -> 3)" },
-      { name: "Thief Bug", full: "FLEE +4", delta: "+4 FLEE (new)" },
+      { name: "Skogul", full: "Bleeding resist +50% (offsets a 30% self-Bleeding proc, not otherwise reflected)", delta: "+50% (new)" },
+      { name: "Super Picky", full: "VIT +3, MaxHP +100 (unaffected)", delta: "+2 VIT (1 -> 3)" },
+      { name: "Thief Bug", full: "AGI +1 (unaffected), FLEE +4", delta: "+4 FLEE (new)" },
       { name: "Venatu", full: "INT/15 -> LUK +1 (cycle)", delta: "Reassigned: was AGI/18->LUK, now INT/15->LUK" },
-      { name: "Venomous", full: "Poison resist +50%", delta: "+50% (new)" },
-      { name: "Waste Stove", full: "ATK +10", delta: "+5 ATK (5 -> 10)" },
-      { name: "Wooden Golem", full: "DEF +5", delta: "+4 DEF (1 -> 5)" },
-      { name: "Yellow Novus", full: "MaxHP +2%", delta: "+2% (new)" },
+      { name: "Venomous", full: "Poison resist +50% (offsets a 30% self-Poison proc, not otherwise reflected)", delta: "+50% (new)" },
+      { name: "Waste Stove", full: "INT +1 (unaffected), ATK +10", delta: "+5 ATK (5 -> 10)" },
+      { name: "Wooden Golem", full: "DEF +5 (30%->50% HP recovery rate not reflected)", delta: "+4 DEF (1 -> 5)" },
+      { name: "Yellow Novus", full: "MaxHP +500 (unaffected), MaxHP +2% (10%->20% HP recovery rate not reflected)", delta: "+2% (new)" },
     ]},
     { slot: "Left hand / shield", cards: [
       { name: "Ambernite", full: "DEF +7, MDEF +3", delta: "+5 DEF (2 -> 7), +3 MDEF (new)" },
@@ -1217,53 +1238,53 @@
       { name: "Arclouze", full: "[Refine ≤4] MDEF +12", delta: "Removed base DEF+2; MDEF 3 (≤5) -> 12 (≤4)" },
       { name: "Deniro", full: "DEF +30 (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat DEF +30 added" },
       { name: "Despero of Thanatos", full: "INT -4 base, +1 INT per refine level", delta: "Base INT -6 -> -4" },
-      { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse", delta: "+20% each (30% -> 50%)" },
-      { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium", delta: "+5% Small, +5% Large (Medium unchanged)" },
+      { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse (also 5% chance each to inflict these on your attacker when hit, not reflected)", delta: "+20% each (30% -> 50%)" },
+      { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium (also 0.3% chance for temporary +30 Perfect Dodge for 10s, not reflected)", delta: "+5% Small, +5% Large (Medium unchanged)" },
       { name: "Megalodon", full: "DEF +3, Freeze resist +30%", delta: "+2 DEF (1 -> 3), +10% Freeze resist (20% -> 30%)" },
-      { name: "Munak", full: "DEF +3", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
+      { name: "Munak", full: "DEF +3 (Earth and Stone Curse resist removed; +30% resist vs some Payon mobs not reflected)", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
       { name: "Parasite", full: "DEF +2, Neutral resist +10%", delta: "+1 DEF (1 -> 2), +5% Neutral (5% -> 10%)" },
       { name: "Sting", full: "All stats +1 · [Refine +7] +1 more (total +2)", delta: "Reworked (was DEF+2, MDEF+5 at refine ≥9)" },
-      { name: "Tamruan", full: "DEF +3", delta: "+1 DEF (2 -> 3)" },
+      { name: "Tamruan", full: "DEF +3 (10%->25% more dmg with Shield Charge/Boomerang not reflected)", delta: "+1 DEF (2 -> 3)" },
     ]},
     { slot: "Garment / shoulder", cards: [
-      { name: "Baphomet Jr.", full: "FLEE +5", delta: "+5 FLEE (new)" },
-      { name: "Choco", full: "FLEE +15", delta: "+5 FLEE (10 -> 15)" },
+      { name: "Baphomet Jr.", full: "AGI +3, Crit Rate +1 (unaffected), FLEE +5", delta: "+5 FLEE (new)" },
+      { name: "Choco", full: "FLEE +15, Perfect Dodge +5 (unaffected) (banana juice/Provoke skill not reflected)", delta: "+5 FLEE (10 -> 15)" },
       { name: "Chung E", full: "LUK -3 base, +1 LUK / +1 Crit Rate per refine level", delta: "Base LUK -5 -> -3" },
       { name: "Dragon Fly", full: "AGI +2 · [+ Chonchon] FLEE +20", delta: "+1 AGI (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Eclipse", full: "VIT +2 · [+ Lunatic] FLEE +20", delta: "+1 VIT (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Mastering", full: "LUK +2 · [+ Poring] FLEE +20", delta: "+1 LUK (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Ninetails", full: "AGI +2 · [Refine +7] FLEE +18", delta: "Refine +9->+7, FLEE 20->18 (AGI+2 keeps total at 20)" },
-      { name: "Noxious", full: "Long-range dmg resist +15%", delta: "+5% (10% -> 15%)" },
+      { name: "Noxious", full: "Neutral resist +10% (unaffected), Long-range dmg resist +15%", delta: "+5% (10% -> 15%)" },
       { name: "Orc Baby", full: "FLEE +10, Neutral resist +10% · [Refine +7] both +2 more", delta: "Refine +9 -> +7, bonus +5 -> +2 (both FLEE and Neutral)" },
-      { name: "Roween", full: "ATK dmg vs Water +15%", delta: "+5% (10% -> 15%)" },
+      { name: "Roween", full: "FLEE +5, Perfect Dodge +3 (unaffected), ATK dmg vs Water +15%", delta: "+5% (10% -> 15%)" },
       { name: "Toad", full: "Perfect Dodge +3 · [+ Roda Frog] FLEE +20", delta: "+2 Perfect Dodge (1 -> 3); combo +2 FLEE (18 -> 20)" },
       { name: "Vagabond Wolf", full: "STR +2 · [+ Wolf] FLEE +20", delta: "+1 STR (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Vocal", full: "MDEF +5 · [+ Rocker] FLEE +20", delta: "+2 MDEF (3 -> 5); combo +2 FLEE (18 -> 20)" },
-      { name: "Whisper", full: "Ghost resist penalty removed (was -50%)", delta: "+50% resist (removes vanilla -50% penalty)" },
+      { name: "Whisper", full: "FLEE +20 (unaffected), Ghost resist penalty removed (was -50%)", delta: "+50% resist (removes vanilla -50% penalty)" },
     ]},
     { slot: "Shoes", cards: [
-      { name: "Alarm", full: "MaxHP +400", delta: "+100 (300 -> 400)" },
-      { name: "Freezer", full: "MaxHP +400", delta: "+100 (300 -> 400)" },
+      { name: "Alarm", full: "VIT +1 (unaffected), MaxHP +400", delta: "+100 (300 -> 400)" },
+      { name: "Freezer", full: "MaxHP +400 (+10% dmg with Bash at refine 9-10 not reflected)", delta: "+100 (300 -> 400)" },
       { name: "Gold Acidus", full: "MaxHP/MaxSP +5% · [Refine ≤4] +5% more each, HP/SP Recovery Rate +15%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 15%" },
-      { name: "Ice Titan", full: "VIT +5", delta: "+3 VIT (2 -> 5)" },
+      { name: "Ice Titan", full: "VIT +5 (0.3%->5% chance for temporary +10->15 DEF for 10s, not reflected)", delta: "+3 VIT (2 -> 5)" },
       { name: "Male Thief Bug", full: "AGI +3, FLEE +2", delta: "+1 AGI (2 -> 3), +2 FLEE (new)" },
       { name: "Megalith", full: "[Refine ≤4] MDEF +7, VIT +2, DEF +4", delta: "Refine ≤5 -> ≤4; added VIT+2/DEF+4" },
       { name: "Odium of Thanatos", full: "AGI -4 base, +1 AGI per refine level", delta: "Base AGI -5 -> -4" },
       { name: "Raggler", full: "STR +2, VIT +2", delta: "+1 STR (1 -> 2), +1 VIT (1 -> 2)" },
-      { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1", delta: "+1 DEF (new)" },
-      { name: "Wild Rose", full: "LUK +1", delta: "+1 LUK (new)" },
-      { name: "Zombie Slaughter", full: "+5% ATK/MATK dmg vs Demi-Human", delta: "+4% each (1% -> 5%)" },
+      { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1 (3% chance to cast Turn Undead via Skull Ring combo not reflected)", delta: "+1 DEF (new)" },
+      { name: "Wild Rose", full: "AGI +1 (unaffected), LUK +1 ([Thief only] Perfect Dodge +5, unaffected, not reflected)", delta: "+1 LUK (new)" },
+      { name: "Zombie Slaughter", full: "+5% ATK/MATK dmg vs Demi-Human (50->100 HP per kill proc not reflected)", delta: "+4% each (1% -> 5%)" },
     ]},
     { slot: "Accessory", cards: [
       { name: "Baby Garm/Hatii", full: "(moved from weapon to accessory slot; stats unchanged)", delta: "Slot reassignment only" },
-      { name: "Galion", full: "ATK dmg vs Water +10%", delta: "+5% (5% -> 10%)" },
-      { name: "Joker", full: "All race resist -20%", delta: "-20% each (new debuff, vs all 10 races)" },
-      { name: "Ragged Zombie", full: "+5% ATK/MATK dmg vs Demi-Human", delta: "+4% each (1% -> 5%)" },
-      { name: "Shinobi", full: "Perfect Dodge +1", delta: "+1 (new)" },
+      { name: "Galion", full: "HIT +5 (unaffected), ATK dmg vs Water +10%", delta: "+5% (5% -> 10%)" },
+      { name: "Joker", full: "All race resist -20% (grants Gank skill, 7% auto-steal, not reflected)", delta: "-20% each (new debuff, vs all 10 races)" },
+      { name: "Ragged Zombie", full: "+5% ATK/MATK dmg vs Demi-Human (0.1%->2% Bleeding-on-hit chance not reflected)", delta: "+4% each (1% -> 5%)" },
+      { name: "Shinobi", full: "AGI +1 (unaffected), Perfect Dodge +1 (cloak/Shuriken proc-on-hit not reflected)", delta: "+1 (new)" },
       { name: "Spore", full: "VIT +3", delta: "+1 VIT (2 -> 3)" },
-      { name: "Tarou", full: "ATK +2", delta: "+2 (new)" },
-      { name: "Wormtail", full: "HIT +5", delta: "+5 (new)" },
-      { name: "Zhu Po Long", full: "Crit Rate +4", delta: "+1 (3 -> 4)" },
+      { name: "Tarou", full: "STR +2 (unaffected), ATK +2", delta: "+2 (new)" },
+      { name: "Wormtail", full: "DEX +2 (unaffected), HIT +5", delta: "+5 (new)" },
+      { name: "Zhu Po Long", full: "AGI +1 (unaffected), Crit Rate +4", delta: "+1 (3 -> 4)" },
     ]},
   ];
 
