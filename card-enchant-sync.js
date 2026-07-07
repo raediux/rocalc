@@ -40,7 +40,10 @@
 //     unconditional n_A_card[9] line instead (verified live: the bonus is
 //     now consistently applied regardless of refine level, matching vanilla's
 //     actual head2 behavior). See the head1-vs-head2 note in REFINE_DELTAS
-//     below (Carat/Gibbet) for the full story on this trap.
+//     below (Carat/Gibbet) for the full story on this trap. Full-file audit
+//     2026-07-07: this same block also has `179==n_A_card[16/17/18]&&(I+=5)`
+//     checks (vanilla's own, unedited) — confirmed dead too, since n_A_card
+//     is only ever assigned indices 0-15 anywhere in the engine.
 //   - Kathryne Keyron (card 177, headgear — = changelog's "Katrinn_Card";
 //     confirmed live to equip via head1/n_A_card[8], so no head1-vs-head2
 //     trap here): %MATK bonus threshold refine>=9 -> refine>=7, value
@@ -1038,6 +1041,33 @@
   // contributes +18 whenever the pair is active, the fix is just the DELTA
   // (20-18=+2) on top of vanilla's own real contribution, not a flat +20 —
   // confirmed this lands on the correct total (20) via live testing.
+  // Steel Chonchon + Chonchon (2026-07-07): the ONE genuine gap found in a
+  // full 169-entry raw-changelog cross-reference — "Combo function added
+  // with Chonchon_Card: 3% ASPD" had zero existing engine hook anywhere
+  // (confirmed: no CardNumSearch(74)/CardNumSearch(88) hit at all, no code90
+  // combo-marker on either card's own m_Card entry — a wholly NEW effect,
+  // unlike the mini-boss FLEE combos which were pre-existing vanilla
+  // behavior this project just needed to top up). Live-verified equip
+  // slots don't conflict: Steel Chonchon is body, Chonchon is shoes.
+  // Needed a real engine edit, not a delta — same trap as Howard Alt-Eisen:
+  // raw ASPD gets discarded/transformed by the time StAllCalc returns, so
+  // there's no final-ASPD global to patch post-hoc. Traced Howard Alt-
+  // Eisen's own insertion point further this time and found it's not flat
+  // ASPD at all — it's the source for a %-based equipment-ASPD term
+  // (`var E=I` right after the accumulator, then
+  // `percentAspdEquipment=(195-n_A_ASPD)*(E/100)`) — so this combo's "3%"
+  // slots into the exact same accumulator Howard Alt-Eisen already uses.
+  // Inserted `CardNumSearch(74)&&CardNumSearch(88)&&(I+=3)` immediately
+  // after Howard Alt-Eisen's own `159==n_A_card[3]&&(I+=6)` line in
+  // foot_2026-04-06.js. Live-verified: displayed ASPD stays flat with just
+  // one of the two cards equipped (150.3, matching baseline), jumps
+  // 150.5->153.5 (a clean +3) only when BOTH are equipped together, and
+  // Steel Chonchon alone contributes nothing on its own — confirming the
+  // combo gate works and neither card carries the bonus independently.
+  // Unlike the FLEE combos, the engine edit produces the FULL effect
+  // directly (no separate top-up delta needed on top of an existing
+  // vanilla contribution) — apply() returns {} on purpose, this entry
+  // exists purely so the combo shows up in the summary panels.
   var COMBO_DELTAS = [
     { pair: ["Mastering", "Poring"] },
     { pair: ["Eclipse", "Lunatic"] },
@@ -1049,7 +1079,13 @@
     rule.apply = function () { return { n_A_FLEE: 2 }; }; // delta on top of vanilla's real +18 (18->20)
     rule.label = "+2 FLEE (combo: " + rule.pair[0] + " + " + rule.pair[1] + ", 18->20)";
     return rule;
-  });
+  }).concat([
+    {
+      pair: ["Steel Chonchon", "Chonchon"],
+      apply: function () { return {}; }, // full effect is baked into the engine edit itself
+      label: "+3% ASPD (combo: Steel Chonchon + Chonchon, new)",
+    },
+  ]);
 
   // n_tokNN pseudo-keys address window.n_tok[NN] (an array element) rather
   // than a simple window[name] global — everything else in REFINE_DELTAS so
@@ -1263,6 +1299,7 @@
       { name: "Remover", full: "MaxHP +800 base, -20/refine", delta: "-40/refine -> -20/refine" },
       { name: "Savage", full: "VIT +5, MaxHP +200", delta: "+2 VIT (3 -> 5), +200 MaxHP (new)" },
       { name: "Skogul", full: "Bleeding resist +50% (offsets a 30% self-Bleeding proc, not otherwise reflected)", delta: "+50% (new)" },
+      { name: "Steel Chonchon", full: "DEF +2, Wind resist +10% · [+ Chonchon] ASPD +3%", delta: "combo +3% ASPD (new, w/ Chonchon)" },
       { name: "Super Picky", full: "VIT +3, MaxHP +100", delta: "+2 VIT (1 -> 3)" },
       { name: "Thief Bug", full: "AGI +1, FLEE +4", delta: "+4 FLEE (new)" },
       { name: "Venatu", full: "INT/15 -> LUK +1 (cycle)", delta: "Reassigned: was AGI/18->LUK, now INT/15->LUK" },
@@ -1304,6 +1341,7 @@
     ]},
     { slot: "Shoes", cards: [
       { name: "Alarm", full: "VIT +1, MaxHP +400", delta: "+100 (300 -> 400)" },
+      { name: "Chonchon", full: "FLEE +2, AGI +3 · [+ Dragon Fly] FLEE +20 · [+ Steel Chonchon] ASPD +3%", delta: "+2 AGI (1 -> 3); combo +2 FLEE (18 -> 20, w/ Dragon Fly); combo +3% ASPD (new, w/ Steel Chonchon)" },
       { name: "Freezer", full: "MaxHP +400 (+10% dmg with Bash at refine 9-10)", delta: "+100 (300 -> 400)" },
       { name: "Gold Acidus", full: "MaxHP/MaxSP +5% · [Refine ≤4] +5% more each, HP/SP Recovery Rate +15%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 15%" },
       { name: "Ice Titan", full: "VIT +5 (0.3%->5% chance for temporary +10->15 DEF for 10s)", delta: "+3 VIT (2 -> 5)" },
