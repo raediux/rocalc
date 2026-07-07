@@ -168,6 +168,15 @@ Calc's theme: <select id="theme" onChange="themes()"><option value="0">Original<
 </table>
 
 
+<svg class="eqp-sprite" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+<symbol id="eqp-i-sword" viewBox="0 0 24 24"><path d="M5 19 L17 7"/><path d="M8 12 L12 16"/><circle cx="5" cy="19" r="1.3"/></symbol>
+<symbol id="eqp-i-crown" viewBox="0 0 24 24"><path d="M4 18 L4 9 L9 13 L12 6 L15 13 L20 9 L20 18 Z"/></symbol>
+<symbol id="eqp-i-shield" viewBox="0 0 24 24"><path d="M12 3 L19 6 V11 C19 16 16 19.5 12 21 C8 19.5 5 16 5 11 V6 Z"/></symbol>
+<symbol id="eqp-i-shirt" viewBox="0 0 24 24"><path d="M8.5 4 L4.5 7.5 L7 10.5 L8.5 9 V20 H15.5 V9 L17 10.5 L19.5 7.5 L15.5 4 C14.7 5.4 13.4 6.2 12 6.2 C10.6 6.2 9.3 5.4 8.5 4 Z"/></symbol>
+<symbol id="eqp-i-cape" viewBox="0 0 24 24"><path d="M7 5 H17 L19 20 H5 Z"/><path d="M9 5 C9.5 7 14.5 7 15 5"/></symbol>
+<symbol id="eqp-i-boot" viewBox="0 0 24 24"><path d="M7 4 V13 H11 L15 17 H20 V19 H4 V4 Z"/></symbol>
+<symbol id="eqp-i-gem" viewBox="0 0 24 24"><path d="M12 4 L19 9.5 L12 21 L5 9.5 Z"/><path d="M8 9.5 H16"/></symbol>
+</svg>
 <table class="tborder" onMouseOver="FirstNovis()" style="margin-right:0">
 <tr><td class="subheader" colspan="3">
 Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 120px; visibility: hidden;"><option value="0">All</option><option value="13">Until episode 13.3: El Dicastes</option><option value="12">Until episode 12: Nightmare of Midgard, Destruction of Morocc</option><option value="11">Until episode 11: The Religious Nation, Arunafeltz</option><option value="10">Until episode 10: The Republic of Schwarzwald</option><option value="9">Until episode 9: Rebirth Job System</option><option value="8">Until episode 8: Niflheim ~ City of the Dead</option></select>
@@ -177,106 +186,146 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 </td></tr>
 
 <tr class="tequip"><td>
-<table><tr>
-<td>Weapon<!-- Type-->:<!-- <select name="A_WeaponType" onChange="ClickWeaponType(this[this.selectedIndex].value) | StAllCalc()|restrictCardslot(1)"></select>--></td>
-</tr><tr>
-<!--<td><select name="A_weapon1" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(1)"></select></td>-->
-<td id="A_w1"><select name="A_weapon1" onchange="ClickWeaponType(this[this.selectedIndex].value) | StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(1)"><option value="0">(No Weapon)</option></select></td>
-</tr><tr>
-<td>Refine: <select disabled name="A_Weapon_refine" onchange="StAllCalc()"></select></td>
-</tr><tr>
-<td>Attribute: <select name="A_Weapon_element" onchange="calc()"></select></td>
-</tr><tr>
-<td><select name="A_cardshort" onchange="Setm_CardShort()|Click_Card()|ActiveSkillSetPlus()"></select></td>
-</tr><tr>
-<td><select name="A_weapon1_card1" onchange="Click_Card(this[this.selectedIndex].value)"></select></td>
-</tr><tr>
-<td><select name="A_weapon1_card2" onchange="Click_Card(this[this.selectedIndex].value)"></select></td>
-</tr><tr>
-<td><select name="A_weapon1_card3" onchange="Click_Card(this[this.selectedIndex].value)"></select></td>
-</tr><tr>
-<td><select name="A_weapon1_card4" onchange="Click_Card(this[this.selectedIndex].value)"></select></td>
-</tr></table>
-</td>
+<div class="eqp-grid">
+<div class="eqp-col">
 
-<td id="leftweapon" style="border-left:1px solid #999; border-right:1px solid #999;">
-<table class="tequip">
-<tr><td id="A_SobWeaponName"></td></tr>
-<tr><td id="A_w2"></td></tr>
-<tr><td id="A_weapon2refine"></td></tr>
-<tr><td>&nbsp;</td></tr>
-<tr><td id="A_weapon2_cardshort"></td></tr>
-<tr><td id="nA_weapon2_c1"></td></tr>
-<tr><td id="nA_weapon2_c2"></td></tr>
-<tr><td id="nA_weapon2_c3"></td></tr>
-<tr><td id="nA_weapon2_c4"></td></tr>
-</table>
-</td>
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-sword"/></svg>
+<div class="eqp-namegroup">
+<select disabled name="A_Weapon_refine" onchange="StAllCalc()" title="Refine"></select>
+<div id="A_w1" class="eqp-namecell"><select name="A_weapon1" onchange="ClickWeaponType(this[this.selectedIndex].value) | StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(1)"><option value="0">(Weapon)</option></select></div>
+<select name="A_Weapon_element" onchange="calc()" title="Element"></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_cardshort" onchange="Setm_CardShort()|Click_Card()|ActiveSkillSetPlus()" class="eqp-card-filter" title="Filter cards"></select>
+<select name="A_weapon1_card1" onchange="Click_Card(this[this.selectedIndex].value)"></select>
+<select name="A_weapon1_card2" onchange="Click_Card(this[this.selectedIndex].value)"></select>
+<select name="A_weapon1_card3" onchange="Click_Card(this[this.selectedIndex].value)"></select>
+<select name="A_weapon1_card4" onchange="Click_Card(this[this.selectedIndex].value)"></select>
+</div>
+<div id="A_SobWeaponName"></div>
+<div id="A_w2"></div>
+<div id="A_weapon2refine"></div>
+<div id="A_weapon2_cardshort"></div>
+<div id="nA_weapon2_c1"></div>
+<div id="nA_weapon2_c2"></div>
+<div id="nA_weapon2_c3"></div>
+<div id="nA_weapon2_c4"></div>
+</div>
 
-<td>
-<table class="tequip"><tr>
-<td>
-<select name="A_HEAD_REFINE" onchange="StAllCalc()"></select>
-<select name="A_head1" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(2)"></select>
-<select name="A_head1_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
-</td>
-
-</tr><tr style=" height:10px;">
-<td style="padding-left:49px;">
-<select name="A_head2" style="width:200px;" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(3)"></select>
-<select name="A_head2_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
-</td>
-
-</tr><tr>
-<td style="padding-left:49px;">
-<select name="A_head3" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(4)"></select>
-<select name="A_HSE_HEAD1" onchange="StAllCalc()"></select>
-</td>
-
-</tr><tr>
-<td>
-<select name="A_LEFT_REFINE" onchange="StAllCalc()"></select>
-<select name="A_left" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(5)|setShieldWeight(this[this.selectedIndex].value)">
-<option value="305">(No Shield)</option></select>
-<select name="A_left_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)">
-<option value="0">(No Card)</option></select>
-</td>
-
-</tr><tr>
-<td>
-<select name="A_BODY_REFINE" onchange="StAllCalc()"></select>
-<select name="A_body" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(6)"></select>
-<select name="A_body_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
-<select name="A_HSE" onchange="StAllCalc()"></select>
-</td>
-
-</tr><tr>
-<td>
-<select name="A_SHOULDER_REFINE" onchange="StAllCalc()"></select>
-<select name="A_shoulder" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(7)"></select>
-<select name="A_shoulder_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
-</td>
-
-</tr><tr>
-<td>
-<select name="A_SHOES_REFINE" onchange="StAllCalc()"></select>
-<select name="A_shoes" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(8)"></select>
-<select name="A_shoes_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
-</td>
-
-</tr><tr>
-<td style="padding-left:49px;">
-<select name="A_acces1" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(9)"></select>
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-gem"/></svg>
+<select name="A_acces1" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(9)" class="eqp-name"></select>
+</div>
+<div class="eqp-cards">
 <select name="A_acces1_card" onchange="Click_Card(this[this.selectedIndex].value)"></select>
-</td>
+</div>
+</div>
 
-</tr><tr>
-<td style="padding-left:49px;">
-<select name="A_acces2" style="width:200px" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(10)"></select>
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-gem"/></svg>
+<select name="A_acces2" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(10)" class="eqp-name"></select>
+</div>
+<div class="eqp-cards">
 <select name="A_acces2_card" onchange="Click_Card(this[this.selectedIndex].value)"></select>
-</td>
-</tr>
-</table>
+</div>
+</div>
+
+</div>
+<div class="eqp-col">
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-crown"/></svg>
+<div class="eqp-namegroup">
+<select name="A_HEAD_REFINE" onchange="StAllCalc()" title="Refine"></select>
+<select name="A_head1" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(2)" class="eqp-name"></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_head1_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-crown"/></svg>
+<select name="A_head2" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(3)" class="eqp-name" style="width:200px;"></select>
+</div>
+<div class="eqp-cards">
+<select name="A_head2_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-crown"/></svg>
+<select name="A_head3" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(4)" class="eqp-name" style="width:200px"></select>
+<select name="A_HSE_HEAD1" onchange="StAllCalc()" title="Hidden Slot Enchant"></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-shield"/></svg>
+<div class="eqp-namegroup">
+<select name="A_LEFT_REFINE" onchange="StAllCalc()" title="Refine"></select>
+<select name="A_left" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(5)|setShieldWeight(this[this.selectedIndex].value)" class="eqp-name">
+<option value="305">(Shield)</option></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_left_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)">
+<option value="0">(Card)</option></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-shirt"/></svg>
+<div class="eqp-namegroup">
+<select name="A_BODY_REFINE" onchange="StAllCalc()" title="Refine"></select>
+<select name="A_body" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(6)" class="eqp-name"></select>
+<select name="A_HSE" onchange="StAllCalc()" title="Hidden Slot Enchant"></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_body_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-cape"/></svg>
+<div class="eqp-namegroup">
+<select name="A_SHOULDER_REFINE" onchange="StAllCalc()" title="Refine"></select>
+<select name="A_shoulder" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(7)" class="eqp-name"></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_shoulder_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
+</div>
+</div>
+
+<div class="eqp-block">
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-boot"/></svg>
+<div class="eqp-namegroup">
+<select name="A_SHOES_REFINE" onchange="StAllCalc()" title="Refine"></select>
+<select name="A_shoes" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(8)" class="eqp-name"></select>
+</div>
+</div>
+<div class="eqp-cards">
+<select name="A_shoes_card" onchange="StAllCalc()|Card(this[this.selectedIndex].value)"></select>
+</div>
+</div>
+
+</div>
+</div>
 </td></tr></table>
 
 <table><tr><td style="padding: 0 8px 0 0; vertical-align:top;">

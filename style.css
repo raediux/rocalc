@@ -36,6 +36,7 @@
   --border-dark: #2b3542;
   --accent: #e8842c;
   --accent-soft: rgba(232, 132, 44, 0.35);
+  --accent-blue: #5ba3d8;
   --shadow-panel: 0 2px 10px rgba(0, 0, 0, 0.18);
   --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
@@ -939,7 +940,7 @@ body.t-payon .stin {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent);
+  color: var(--accent-blue);
   margin-bottom: var(--sp-2);
 }
 .ces-summary-table {
@@ -974,7 +975,7 @@ body.t-payon .ces-summary {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent);
+  color: var(--accent-blue);
   margin-bottom: var(--sp-2);
 }
 .ces-fc-table {
@@ -1007,7 +1008,7 @@ body.t-payon .ces-summary {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: #6d7684;
+  color: var(--accent);
   padding-top: var(--sp-3);
 }
 .ces-fc-table tr.ces-fc-slot:first-child td {
@@ -1030,4 +1031,157 @@ body.t-payon .ces-summary {
   align-items: center;
   gap: var(--sp-1);
   white-space: nowrap;
+}
+
+/* ============================================================
+   Equipment & Cards panel (index.html) — replaces the old plain
+   nested-table layout. Weapon + accessories in one column, head/
+   armor slots in the other. Every slot is an icon + item dropdown
+   (+ refine/attribute dropdowns inline where applicable), with its
+   card dropdown(s) indented directly beneath — the indent shows
+   the card is slotted into that specific piece of gear, not a
+   headgear-group relationship.
+   ============================================================ */
+.eqp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: var(--sp-4);
+}
+.eqp-block {
+  border-radius: 6px;
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-1);
+  margin-bottom: 2px;
+}
+.eqp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.eqp-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.55;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.eqp-item select,
+.eqp-item .cbx {
+  flex-shrink: 0;
+}
+.eqp-item > .eqp-namecell,
+.eqp-item > .eqp-name,
+.eqp-item > .cbx {
+  flex: 0 1 50%;
+  min-width: 0;
+}
+.eqp-namecell .cbx {
+  display: block;
+  width: 100%;
+}
+.eqp-item .cbx-trigger {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Name + refine(+element/enchant) together occupy the same total width as
+   the card row beneath them, so the two rows line up — the name shrinks
+   to make room for its modifier selects instead of adding extra width. */
+.eqp-namegroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 50%;
+  flex-shrink: 0;
+}
+.eqp-namegroup > .eqp-namecell,
+.eqp-namegroup > .eqp-name,
+.eqp-namegroup > .cbx {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.eqp-namegroup select:not(.eqp-name) {
+  flex-shrink: 0;
+  max-width: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eqp-cards {
+  margin-left: 18px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.eqp-cards select,
+.eqp-cards .cbx {
+  width: 50%;
+}
+.eqp-cards .cbx-trigger {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+body.t-dark .eqp-cards {
+  border-left-color: #3a4656;
+}
+body.t-payon .eqp-cards {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+.eqp-card-filter {
+  opacity: 0.65;
+  font-size: var(--text-xs);
+}
+/* Flat, bordered boxes instead of the site-wide pill-shaped accent-orange
+   select/combobox — matches the approved mockup's plainer dropdown look. */
+.eqp-item select,
+.eqp-cards select,
+.eqp-item .cbx-trigger,
+.eqp-cards .cbx-trigger {
+  background-color: #fff !important;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: #16181c;
+}
+.eqp-item select:hover,
+.eqp-cards select:hover,
+.eqp-item .cbx-trigger:hover,
+.eqp-cards .cbx-trigger:hover {
+  border-color: var(--accent-soft);
+}
+.eqp-item select:disabled,
+.eqp-cards select:disabled {
+  opacity: 0.5;
+}
+body.t-dark .eqp-item select,
+body.t-dark .eqp-cards select,
+body.t-dark .eqp-item .cbx-trigger,
+body.t-dark .eqp-cards .cbx-trigger {
+  background-color: #232b36 !important;
+  border-color: #3a4656;
+  color: #dbe2ea;
+}
+body.t-payon .eqp-item select,
+body.t-payon .eqp-cards select,
+body.t-payon .eqp-item .cbx-trigger,
+body.t-payon .eqp-cards .cbx-trigger {
+  background-color: rgba(42, 52, 65, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #dbe2ea;
+}
+select[name="A_HSE_HEAD1"] {
+  display: none;
+}
+@media (max-width: 700px) {
+  .eqp-grid {
+    grid-template-columns: 1fr;
+  }
 }
