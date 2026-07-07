@@ -423,22 +423,45 @@
     ],
     // Munak (left/accessory slot): vanilla Earth(62, % resist vs element) is
     // +5% (confirmed via [125,3,"Munak",0,18,1,62,5,159,15,0] — code18=DEF+1
-    // handled in STAT_DELTAS above, code159=15 is Stone Curse status chance%,
-    // confirmed by cross-referencing Flame_Skull's identical-pattern card
-    // which pairs code159 alongside its other named status-chance codes).
-    // Changelog: "Removed stone curse and earth effects" — removes the Earth
-    // resist entirely (delta -5). The Stone Curse chance% was NEVER
-    // automatable to begin with (no status-chance field exists at all, same
-    // gap as the Coco/Stainer/Martin cluster), so there's nothing to
-    // "remove" there on our side. The changelog's OTHER new effect
-    // ("Increased resistance to some Payon mobs by 30%: Archer Skel, Munak,
-    // Soldier Skel, Bongun, Sohee, Ninetails") targets a hand-picked list of
-    // specific monsters that doesn't correspond to any race/element/size/
-    // type-group category this engine supports — not automatable, flagged
+    // handled in STAT_DELTAS above). CORRECTION 2026-07-07: code159=15 was
+    // originally mislabeled "Stone Curse status chance%" and dismissed as
+    // not automatable — it's actually the SAME status-AILMENT-RESISTANCE
+    // mechanism (codes 150-159) confirmed automatable for Red Novus/Skogul/
+    // Flame Skull, just never retrofitted onto this card (or the rest of
+    // the Coco/Stainer/Martin/Argos/Wootan/Ghoul/Megalodon cluster below —
+    // all processed before that mechanism was discovered). Changelog:
+    // "Removed stone curse and earth effects" — removes BOTH entirely
+    // (Earth delta -5, Stone Curse delta -15). The changelog's OTHER new
+    // effect ("Increased resistance to some Payon mobs by 30%") targets a
+    // hand-picked monster list with no matching race/element/size/type
+    // category this engine supports — still not automatable, still flagged
     // rather than silently dropped.
     "Munak": [
       { code: 62, delta: -5, label: "-5% resist vs Earth (removed)" },
+      { code: 159, delta: -15, label: "-15% resist vs Stone Curse (removed)" },
     ],
+    // Batch 4 (2026-07-07) — the rest of the "1->3 DEF, 20%->30% status"
+    // cluster: every card here has an UNCONDITIONAL code in the 150-159
+    // status-resist range at baseline 20 (confirmed via each card's own
+    // m_Card entry), matching the changelog's stated status name and
+    // baseline exactly except Argos (see below) — same correction as Munak
+    // above, retrofitting the newly-discovered resist mechanism onto cards
+    // processed before it was found. DEF halves already live in STAT_DELTAS.
+    "Coco": [{ code: 155, delta: 10, label: "+10% resist vs Sleep" }],
+    "Stainer": [{ code: 156, delta: 10, label: "+10% resist vs Silence" }],
+    "Martin": [{ code: 154, delta: 10, label: "+10% resist vs Blind" }],
+    "Ghoul": [{ code: 150, delta: 10, label: "+10% resist vs Poison" }],
+    "Megalodon": [{ code: 152, delta: 10, label: "+10% resist vs Freeze" }],
+    "Wootan Shooter": [{ code: 157, delta: 10, label: "+10% resist vs Confusion" }],
+    "Wootan Fighter": [{ code: 158, delta: 10, label: "+10% resist vs Bleeding" }],
+    // Argos: changelog says "20% -> 30% poison", but its actual code is 159
+    // (Stone Curse, confirmed via [124,3,"Argos",0,18,1,159,20,0]), not 150
+    // (Poison) — every other card in this cluster matches its stated status
+    // exactly, only Argos doesn't. The baseline (20) does match, though, so
+    // per Ray this is treated as a typo in the changelog's status name, not
+    // a real mismatch — same class of imprecision as Wooden Golem's stale
+    // DEF baseline.
+    "Argos": [{ code: 159, delta: 10, label: "+10% resist vs Stone Curse" }],
 
     // MAJOR CORRECTION (2026-07-06): a status-AILMENT-resistance mechanism
     // DOES exist (codes 150-159, one per v_Effect entry: 150=Poison,
@@ -1130,17 +1153,17 @@
       { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20", delta: "MaxHP -100 -> -20 (Mage only)" },
       { name: "Blue Acidus", full: "[Refine ≤4] MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
       { name: "Carat", full: "INT +2 · [Refine +7] MaxSP +100", delta: "Refine +9 -> +7, 150 -> 100 SP" },
-      { name: "Coco", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
-      { name: "Ghoul", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Coco", full: "DEF +3, Sleep resist +30%", delta: "+2 DEF (1 -> 3), +10% Sleep resist (20% -> 30%)" },
+      { name: "Ghoul", full: "DEF +3, Poison resist +30%", delta: "+2 DEF (1 -> 3), +10% Poison resist (20% -> 30%)" },
       { name: "Gibbet", full: "[Refine ≤4] MDEF +7", delta: "MDEF +5 (unconditional) -> +7 (refine ≤4 only)" },
       { name: "Kathryne Keyron", full: "Cast Time -1%/refine · [Refine +7] MATK +2%", delta: "Refine +9 -> +7 (value unchanged)" },
       { name: "Knocker", full: "ATK dmg vs Formless +10%", delta: "+5% (5% -> 10%)" },
-      { name: "Martin", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Martin", full: "DEF +3, Blind resist +30%", delta: "+2 DEF (1 -> 3), +10% Blind resist (20% -> 30%)" },
       { name: "Permeter", full: "+15% resist vs Shadow, Undead, Ghost", delta: "+15% Ghost (new)" },
       { name: "Seyren Windsor", full: "STR -4 base, +1 STR per refine level", delta: "Base STR -6 -> -4" },
-      { name: "Stainer", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
-      { name: "Wootan Fighter", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
-      { name: "Wootan Shooter", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Stainer", full: "DEF +3, Silence resist +30%", delta: "+2 DEF (1 -> 3), +10% Silence resist (20% -> 30%)" },
+      { name: "Wootan Fighter", full: "DEF +3, Bleeding resist +30%", delta: "+2 DEF (1 -> 3), +10% Bleeding resist (20% -> 30%)" },
+      { name: "Wootan Shooter", full: "DEF +3, Confusion resist +30%", delta: "+2 DEF (1 -> 3), +10% Confusion resist (20% -> 30%)" },
     ]},
     { slot: "Weapon", cards: [
       { name: "Cecil Damon", full: "HIT +3", delta: "+33 HIT (-30 -> 3)" },
@@ -1190,14 +1213,14 @@
     { slot: "Left hand / shield", cards: [
       { name: "Ambernite", full: "DEF +7, MDEF +3", delta: "+5 DEF (2 -> 7), +3 MDEF (new)" },
       { name: "Andre Egg", full: "MaxHP +10%", delta: "+5% (new)" },
-      { name: "Argos", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
+      { name: "Argos", full: "DEF +3, Stone Curse resist +30%", delta: "+2 DEF (1 -> 3), +10% Stone Curse resist (20% -> 30%)" },
       { name: "Arclouze", full: "[Refine ≤4] MDEF +12", delta: "Removed base DEF+2; MDEF 3 (≤5) -> 12 (≤4)" },
       { name: "Deniro", full: "DEF +30 (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat DEF +30 added" },
       { name: "Despero of Thanatos", full: "INT -4 base, +1 INT per refine level", delta: "Base INT -6 -> -4" },
       { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse", delta: "+20% each (30% -> 50%)" },
       { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium", delta: "+5% Small, +5% Large (Medium unchanged)" },
-      { name: "Megalodon", full: "DEF +3", delta: "+2 DEF (1 -> 3)" },
-      { name: "Munak", full: "DEF +3", delta: "+2 DEF (1 -> 3); Earth resist removed (was +5%)" },
+      { name: "Megalodon", full: "DEF +3, Freeze resist +30%", delta: "+2 DEF (1 -> 3), +10% Freeze resist (20% -> 30%)" },
+      { name: "Munak", full: "DEF +3", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
       { name: "Parasite", full: "DEF +2, Neutral resist +10%", delta: "+1 DEF (1 -> 2), +5% Neutral (5% -> 10%)" },
       { name: "Sting", full: "All stats +1 · [Refine +7] +1 more (total +2)", delta: "Reworked (was DEF+2, MDEF+5 at refine ≥9)" },
       { name: "Tamruan", full: "DEF +3", delta: "+1 DEF (2 -> 3)" },
