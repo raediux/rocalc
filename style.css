@@ -995,6 +995,9 @@ body.t-payon .ces-summary {
 .ces-fc-table .ces-fc-delta {
   opacity: 0.6;
 }
+.ces-fc-tag {
+  color: #7f9cc7;
+}
 .ces-fc-table tr.ces-fc-slot td {
   font-size: var(--text-xs);
   font-weight: 600;

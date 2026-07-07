@@ -1255,6 +1255,16 @@
   // <table> throughout (not one table per slot group) so the name/full/
   // delta columns stay aligned across every group instead of each group
   // sizing its columns independently.
+  // Highlights the [Refine +7] / [Mage only] / [+ PartnerName] condition
+  // tags used throughout FULL_CHANGELOG's "full" strings — present in the
+  // approved mockup but lost when the plain-text data was written out, since
+  // nothing wrapped the bracketed portion in its own span. Every tag in this
+  // data is a single bracketed clause with no nested brackets, so a plain
+  // global regex swap is safe.
+  function highlightTags(text) {
+    return text.replace(/\[([^\]]+)\]/g, '<span class="ces-fc-tag">[$1]</span>');
+  }
+
   function ensureFullChangelogTable() {
     var container = document.getElementById("fullChangelogSection");
     if (!container || container.__cesBuilt) return;
@@ -1267,7 +1277,7 @@
       for (var j = 0; j < group.cards.length; j++) {
         var c = group.cards[j];
         rows.push(
-          '<tr><td class="ces-card">' + c.name + '</td><td class="ces-fc-full">' + c.full +
+          '<tr><td class="ces-card">' + c.name + '</td><td class="ces-fc-full">' + highlightTags(c.full) +
           '</td><td class="ces-fc-delta">' + c.delta + "</td></tr>"
         );
       }
