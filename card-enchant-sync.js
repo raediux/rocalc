@@ -1144,7 +1144,7 @@
     ]},
     { slot: "Weapon", cards: [
       { name: "Cecil Damon", full: "HIT +3", delta: "+33 HIT (-30 -> 3)" },
-      { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "+7% vs 6 more races (already had vs Brute/Plant/Insect/Demi-Human)" },
+      { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "Was Brute/Plant/Insect/Demi-Human only" },
       { name: "Female Thief Bug", full: "AGI +2", delta: "+1 AGI (1 -> 2)" },
       { name: "Fur Seal", full: "HIT +12, FLEE +4", delta: "+2 HIT (10->12), +1 FLEE (3->4)" },
       { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
