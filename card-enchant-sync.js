@@ -627,7 +627,7 @@
     // in the first place — live-tested and confirmed: at refine 9, DEF
     // came out to -2 instead of 0. Moved into REFINE_DELTAS below so the
     // cancellation is refine-aware like the real vanilla check.
-    "Sting": [{ code: 18, delta: -2, label: "-2 DEF (removed, card reworked)" }],
+    "Sting": [{ code: 18, delta: -2, label: "-2 DEF (removed, card reworked)", hidden: true }],
 
     // Chung E (garment): vanilla LUK-5 base (m_Card code6=-5, confirmed via
     // [402,5,"Chung E","<b>For each refine level:</b> LUK +1, CRIT +1",6,-5,0])
@@ -695,11 +695,27 @@
   // recalc to pick up the change.
   var codeDeltaTotals = {};
 
+  // Base-stat deltas (STR/AGI/VIT/INT/DEX/LUK) can't be bolted on post-hoc the
+  // way DEF/MDEF/MaxHP/etc. can. The six base stats are consumed INSIDE
+  // StAllCalc to derive everything downstream — ATK, HIT, FLEE, CRI, MaxHP/SP,
+  // ASPD, and their own on-screen "+N" bonus text — so bumping the global
+  // AFTER the original StAllCalc returned changes the raw n_A_STR value but
+  // nothing that reads it, and the card silently does nothing (Ray hit this
+  // with the reworked Sting: "+1 all stats" listed in the panel, zero actual
+  // effect). Instead these are injected through the SAME StPlusCard hook the
+  // generic code deltas use: StCalc seeds each stat bonus via StPlusCard(1..6)
+  // (`n+=StPlusCard(1)`, ..., `l+=StPlusCard(6)`), so a value added here flows
+  // through the normal pipeline and reaches every derived stat and display.
+  // Keyed by those same stat-code numbers; populated only transiently by the
+  // patched StAllCalc's second pass (see patchStAllCalc below).
+  var STAT_CODE = { n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6 };
+  var baseStatCodeInjection = {};
+
   function patchStPlusCard() {
     if (typeof window.StPlusCard !== "function" || window.StPlusCard.__cesPatched) return;
     var original = window.StPlusCard;
     var patched = function (code) {
-      return original(code) + (codeDeltaTotals[code] || 0);
+      return original(code) + (codeDeltaTotals[code] || 0) + (baseStatCodeInjection[code] || 0);
     };
     patched.__cesPatched = true;
     window.StPlusCard = patched;
@@ -763,6 +779,12 @@
           n_A_STR: perStat, n_A_AGI: perStat, n_A_VIT: perStat,
           n_A_INT: perStat, n_A_DEX: perStat, n_A_LUK: perStat,
         };
+      },
+      // Collapse the six identical stat lines into one row (and hide the
+      // internal vanilla MDEF+5 cancellation, which isn't a user-facing bonus)
+      // — Ray wants the panel to read just "+N all stats".
+      label: function (refine) {
+        return ["+" + (1 + (refine >= 7 ? 1 : 0)) + " all stats"];
       },
     },
     // Arclouze (left/accessory slot): vanilla refine<=5 gives BOTH DEF+2
@@ -1092,12 +1114,48 @@
   // far only needed plain globals, Orc Baby's Neutral-resist half is the
   // first to need this.
   function applyGlobalDelta(name, amount) {
+    // Base stats are routed through baseStatCodeInjection / StPlusCard instead
+    // (see STAT_CODE above). Applying them here — after StAllCalc already
+    // derived everything from them — is a no-op on the derived stats/display
+    // and would double-count against the injected value.
+    if (STAT_CODE[name]) return;
     var m = /^n_tok(\d+)$/.exec(name);
     if (m) {
       if (window.n_tok) window.n_tok[+m[1]] += amount;
       return;
     }
     if (typeof window[name] === "number") window[name] += amount;
+  }
+
+  // Sum every equipped card's base-stat contribution (across all delta
+  // mechanisms) into a { statCode: total } map, read from the globals the
+  // original StAllCalc just refreshed (refine levels, SU_* base-stat
+  // snapshots, job/target race). Fed into baseStatCodeInjection for the
+  // second pass so StPlusCard(1..6) hands these to StCalc.
+  function collectBaseStatCodeDeltas(names) {
+    var acc = {};
+    function fold(delta) {
+      if (!delta) return;
+      for (var g in delta) {
+        var code = STAT_CODE[g];
+        if (code && delta[g]) acc[code] = (acc[code] || 0) + delta[g];
+      }
+    }
+    for (var i = 0; i < names.length; i++) {
+      var nm = names[i];
+      fold(STAT_DELTAS[nm]);
+      var rd = REFINE_DELTAS[nm];
+      if (rd) fold(rd.apply(window[rd.refineVar] || 0));
+      var cv = STAT_CONVERSION_DELTAS[nm];
+      if (cv) fold(statConversionDelta(cv));
+      var jd = JOB_CARD_DELTAS[nm];
+      if (jd) fold(jobCardDelta(jd));
+    }
+    for (var c = 0; c < COMBO_DELTAS.length; c++) {
+      var combo = COMBO_DELTAS[c];
+      if (names.indexOf(combo.pair[0]) >= 0 && names.indexOf(combo.pair[1]) >= 0) fold(combo.apply());
+    }
+    return acc;
   }
 
   function describeRefineDelta(delta) {
@@ -1114,6 +1172,21 @@
     var patched = function () {
       var result = original.apply(this, arguments);
       var names = equippedCardNames();
+      // Base-stat deltas must propagate THROUGH the stat pipeline, not be
+      // bolted on afterward. Compute them from the freshly-refreshed globals,
+      // then re-run the original with those values injected into StPlusCard so
+      // StCalc re-derives everything (ATK/HIT/MaxHP/... and the +N stat text)
+      // from the corrected base stats. Only re-runs when a base-stat card is
+      // actually equipped. (StAllCalc resets its own output globals from the
+      // base inputs at the top, so a second call is idempotent, not additive.)
+      var bsCodes = collectBaseStatCodeDeltas(names);
+      var hasBS = false;
+      for (var bk in bsCodes) { if (bsCodes[bk]) { hasBS = true; break; } }
+      if (hasBS) {
+        baseStatCodeInjection = bsCodes;
+        try { result = original.apply(this, arguments); }
+        finally { baseStatCodeInjection = {}; }
+      }
       for (var s = 0; s < names.length; s++) {
         var statDelta = STAT_DELTAS[names[s]];
         if (!statDelta) continue;
@@ -1467,7 +1540,10 @@
         parts.push((v > 0 ? "+" : "") + v + " " + label);
       }
       var codes = entry.codes || [];
-      for (var j = 0; j < codes.length; j++) parts.push(codes[j].label);
+      // `hidden` code entries still apply their math (via codeDeltaTotals) but
+      // are kept out of the panel — used for internal vanilla-cancellations
+      // that aren't a user-facing effect (e.g. Sting's DEF+2 removal).
+      for (var j = 0; j < codes.length; j++) if (!codes[j].hidden) parts.push(codes[j].label);
       var refineParts = entry.refine || [];
       for (var k = 0; k < refineParts.length; k++) parts.push(refineParts[k]);
       var convParts2 = entry.conversion || [];
@@ -1531,8 +1607,7 @@
       var rule = REFINE_DELTAS[names[i3]];
       if (!rule) continue;
       var refine = window[rule.refineVar] || 0;
-      var delta = rule.apply(refine);
-      var parts = describeRefineDelta(delta);
+      var parts = rule.label ? rule.label(refine) : describeRefineDelta(rule.apply(refine));
       perCard[names[i3]] = perCard[names[i3]] || {};
       perCard[names[i3]].refine = parts.length
         ? parts
