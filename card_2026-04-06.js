@@ -180,7 +180,7 @@ m_Card = [
 ,[176,2,"Gemini-S58","<b>[Base AGI >= 90]</b> [Silence] and [Stun] status effects resistance +30%<BR><b>[Base VIT >= 80]</b> [Stone Curse] and [Sleep] status effects resistance +50%",0]
 ,[177,2,"Kathryne Keyron","<b>For each refine level:</b> Casting Time -1%<BR>[Refine Rate 9~10] MATK +2%",0]
 ,[178,2,"Lord Knight","Enables use of ["+skillName(258,SRV)+"] Lvl 1",15,-50,0]
-,[179,2,"Blue Acidus","[Refine Rate 0~4] MaxSP +40, SP Recovery Rate +5%",14,40,0]
+,[179,2,"Blue Acidus","MaxSP +40<BR>[Refine Rate 0~4] MaxSP +40, SP Recovery Rate +5%",14,40,0]
 ,[180,2,"Seyren Windsor","<b>For each refine level:</b> STR +1",1,-6,0]
 ,[181,4,"Waste Stove",0,4,1,17,5,0]
 ,[182,4,"Venomous","When receiving ATK based damage, 30% chance to cause [Poison] status effect on both yourself and your attacker.",0]

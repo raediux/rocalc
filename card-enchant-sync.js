@@ -31,19 +31,19 @@
 //     refine>=7,+9%.
 //   - Gold Acidus (card 407, shoes): %MaxHP/%MaxSP "additional" layer at
 //     refine<=4, 4%->5% each; HP/SP Recovery Rate at refine<=4, 5%->15% each.
-//   - Blue Acidus (card 179, headgear): SP Recovery Rate 5%->20%. This one
-//     is UNCONDITIONAL, not refine-gated — the first edit (in the same pass
-//     as Gold Acidus's line since they sit adjacent in the source) targeted
-//     a refine<=4-gated check keyed to n_A_card[8] (head1), which turned out
-//     to be dead code since this card can only be equipped in head2
-//     (n_A_card[9]) in this dataset. Re-fixed by editing the REAL
-//     unconditional n_A_card[9] line instead (verified live: the bonus is
-//     now consistently applied regardless of refine level, matching vanilla's
-//     actual head2 behavior). See the head1-vs-head2 note in REFINE_DELTAS
-//     below (Carat/Gibbet) for the full story on this trap. Full-file audit
-//     2026-07-07: this same block also has `179==n_A_card[16/17/18]&&(I+=5)`
-//     checks (vanilla's own, unedited) — confirmed dead too, since n_A_card
-//     is only ever assigned indices 0-15 anywhere in the engine.
+//   - Blue Acidus (card 179, headgear): SP Recovery Rate 5%->15% (CORRECTED
+//     2026-07-08 from an earlier 5%->20% overshoot — Ray's in-game tooltip,
+//     card ID 4379, shows +15% at refine <=4). Both live SP-recovery lines
+//     set to +15: the head2 line `179==n_A_card[9]&&(I+=15)` (unconditional,
+//     since the head2 slot has no refine selector in this UI) and the head1
+//     line `n_A_HEAD_REFINE<=4&&179==n_A_card[8]&&(I+=15)` (refine<=4 gated).
+//     NOTE: an earlier version of this comment claimed the head1/n_A_card[8]
+//     line was dead ("card only equips in head2") — that was WRONG. Verified
+//     live 2026-07-08: card 179 is offered in BOTH the head1 and head2
+//     dropdowns, and the head1 refine gate works (MaxSP +80 at refine<=4,
+//     +40 at >=5). The only genuinely dead lines are
+//     `179==n_A_card[16/17/18]&&(I+=5)`, since n_A_card is only ever assigned
+//     indices 0-15 anywhere in the engine.
 //   - Kathryne Keyron (card 177, headgear — = changelog's "Katrinn_Card";
 //     confirmed live to equip via head1/n_A_card[8], so no head1-vs-head2
 //     trap here): %MATK bonus threshold refine>=9 -> refine>=7, value
@@ -302,7 +302,7 @@
     // separately handled in CODE_DELTAS above; this entry covers only its
     // refine<=4 "additional" engine-edit layer.
     "Gold Acidus": ["Refine <=4: additional MaxHP +5%, MaxSP +5%, HP/SP Recovery Rate +15% (was +4%/+4%/+5%)"],
-    "Blue Acidus": ["SP Recovery Rate +20% (was +5%, refine<=4)"],
+    "Blue Acidus": ["SP Recovery Rate +15% (was +5%; refine<=4 in head1, unconditional in head2)"],
     // 2026-07-06: card.js data edits (not foot.js formula edits) — a slot
     // reassignment and two renames/reworks Ray approved as a card.js
     // exception, same basis as the foot.js engine edits above.
@@ -1248,7 +1248,7 @@
   var FULL_CHANGELOG = [
     { slot: "Headgear", cards: [
       { name: "Banshee", full: "[Mage only] MaxSP +100, MaxHP -20 (Soul Strike/Napalm Beat/Napalm Vulcan dmg +20%)", delta: "MaxHP -100 -> -20 (Mage only)" },
-      { name: "Blue Acidus", full: "MaxSP +40, SP Recovery Rate +20%", delta: "SP Recovery Rate 5% -> 20%" },
+      { name: "Blue Acidus", full: "MaxSP +40 · [Refine ≤4] MaxSP +40, SP Recovery Rate +15%", delta: "SP Recovery Rate 5% -> 15% (refine ≤4)" },
       { name: "Carat", full: "INT +2 · [Refine +7] MaxSP +100", delta: "Refine +9 -> +7, 150 -> 100 SP" },
       { name: "Coco", full: "DEF +3, Sleep resist +30%", delta: "+2 DEF (1 -> 3), +10% Sleep resist (20% -> 30%)" },
       { name: "Ghoul", full: "DEF +3, Poison resist +30%", delta: "+2 DEF (1 -> 3), +10% Poison resist (20% -> 30%)" },
