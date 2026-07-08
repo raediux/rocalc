@@ -187,15 +187,18 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 
 <tr class="tequip"><td>
 <div class="eqp-grid">
-<div class="eqp-col">
+<div class="eqp-left-col">
+<div class="eqp-weapon-block">
 
 <div class="eqp-block">
+<div class="eqp-weapon-pair">
+<div class="eqp-weapon-main">
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-sword"/></svg>
 <div class="eqp-namegroup">
-<select disabled name="A_Weapon_refine" onchange="StAllCalc()" title="Refine"></select>
 <div id="A_w1" class="eqp-namecell"><select name="A_weapon1" onchange="ClickWeaponType(this[this.selectedIndex].value) | StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(1)"><option value="0">(Weapon)</option></select></div>
 <select name="A_Weapon_element" onchange="calc()" title="Element"></select>
+<select disabled name="A_Weapon_refine" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -205,15 +208,29 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 <select name="A_weapon1_card3" onchange="Click_Card(this[this.selectedIndex].value)"></select>
 <select name="A_weapon1_card4" onchange="Click_Card(this[this.selectedIndex].value)"></select>
 </div>
+</div>
+<div class="eqp-weapon-off">
 <div id="A_SobWeaponName"></div>
-<div id="A_w2"></div>
-<div id="A_weapon2refine"></div>
+<div class="eqp-item">
+<svg class="eqp-icon"><use href="#eqp-i-sword"/></svg>
+<div class="eqp-namegroup">
+<div id="A_w2" class="eqp-namecell"></div>
+<div id="A_weapon2refine" class="eqp-offrefine"></div>
+</div>
+</div>
+<div class="eqp-cards">
 <div id="A_weapon2_cardshort"></div>
 <div id="nA_weapon2_c1"></div>
 <div id="nA_weapon2_c2"></div>
 <div id="nA_weapon2_c3"></div>
 <div id="nA_weapon2_c4"></div>
 </div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="eqp-accessories">
 
 <div class="eqp-block">
 <div class="eqp-item">
@@ -236,14 +253,15 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 </div>
 
 </div>
-<div class="eqp-col">
+</div>
+<div class="eqp-armor-col">
 
 <div class="eqp-block">
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-crown"/></svg>
 <div class="eqp-namegroup">
-<select name="A_HEAD_REFINE" onchange="StAllCalc()" title="Refine"></select>
 <select name="A_head1" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(2)" class="eqp-name"></select>
+<select name="A_HEAD_REFINE" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -273,9 +291,9 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-shield"/></svg>
 <div class="eqp-namegroup">
-<select name="A_LEFT_REFINE" onchange="StAllCalc()" title="Refine"></select>
 <select name="A_left" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(5)|setShieldWeight(this[this.selectedIndex].value)" class="eqp-name">
 <option value="305">(Shield)</option></select>
+<select name="A_LEFT_REFINE" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -288,9 +306,9 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-shirt"/></svg>
 <div class="eqp-namegroup">
-<select name="A_BODY_REFINE" onchange="StAllCalc()" title="Refine"></select>
 <select name="A_body" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(6)" class="eqp-name"></select>
 <select name="A_HSE" onchange="StAllCalc()" title="Hidden Slot Enchant"></select>
+<select name="A_BODY_REFINE" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -302,8 +320,8 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-cape"/></svg>
 <div class="eqp-namegroup">
-<select name="A_SHOULDER_REFINE" onchange="StAllCalc()" title="Refine"></select>
 <select name="A_shoulder" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(7)" class="eqp-name"></select>
+<select name="A_SHOULDER_REFINE" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -315,8 +333,8 @@ Equipment &amp; Cards <select id="episode" onChange="ClickJob()" style="width: 1
 <div class="eqp-item">
 <svg class="eqp-icon"><use href="#eqp-i-boot"/></svg>
 <div class="eqp-namegroup">
-<select name="A_SHOES_REFINE" onchange="StAllCalc()" title="Refine"></select>
 <select name="A_shoes" onchange="StAllCalc()|ClickB_Item(this[this.selectedIndex].value)|restrictCardslot(8)" class="eqp-name"></select>
+<select name="A_SHOES_REFINE" onchange="StAllCalc()" title="Refine"></select>
 </div>
 </div>
 <div class="eqp-cards">
@@ -636,6 +654,7 @@ Re-designed and adapted for Project Baldur by Wrath<br>
 <script type="text/javascript" src="foot_2026-04-06.js"></script>
 <script type="text/javascript" src="theme-payon.js"></script>
 <script type="text/javascript" src="combobox.js"></script>
+<script type="text/javascript" src="slot-icons.js"></script>
 <script type="text/javascript" src="stat-input.js"></script>
 <script type="text/javascript" src="card-enchant-sync.js"></script>
 

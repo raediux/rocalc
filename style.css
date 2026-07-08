@@ -1045,12 +1045,32 @@ body.t-payon .ces-summary {
 .eqp-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: var(--sp-4);
+  column-gap: var(--sp-4);
+  align-items: start;
+}
+/* Weapon + accessories share the left column. Keeping them in their own flex
+   column (rather than as separate grid rows) stops the taller armor column
+   from stretching the weapon cell and inflating the weapon/accessory gap. */
+.eqp-left-col {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  row-gap: 14px;
+}
+.eqp-armor-col {
+  grid-column: 2;
 }
 .eqp-block {
   border-radius: 6px;
   padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-1);
   margin-bottom: 2px;
+}
+/* Separate the shield (4th slot) from the lower headgear above it, matching
+   the weapon/accessory gap. The 16px collapses with the head's 2px bottom
+   margin to a net 16px — the same visible gap the left column shows (14px flex
+   row-gap + the weapon block's 2px bottom margin). */
+.eqp-armor-col > .eqp-block:nth-child(4) {
+  margin-top: 16px;
 }
 .eqp-item {
   display: flex;
@@ -1068,6 +1088,17 @@ body.t-payon .ces-summary {
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+/* Slot icons light up (accent) once a real item is equipped. The class is
+   maintained by slot-icons.js — a pure :has(option:checked) rule matches
+   correctly but Chromium never re-runs style invalidation when an option's
+   selectedness changes, so the styling silently sticks to the load-time
+   state (verified live: querySelector matched while computed style stayed
+   stale). */
+.eqp-item.eqp-equipped .eqp-icon {
+  opacity: 1;
+  color: var(--accent);
 }
 .eqp-item select,
 .eqp-item .cbx {
@@ -1140,6 +1171,86 @@ body.t-payon .eqp-cards {
   opacity: 0.65;
   font-size: var(--text-xs);
 }
+/* Off-hand weapon (dual-wield classes) sits beside the main weapon instead
+   of stacked below it. The engine injects raw markup into these containers
+   (myInnerHtml), so they're styled by id/attribute rather than authored
+   HTML; collapses entirely when no off-hand weapon is applicable. */
+.eqp-weapon-pair {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.eqp-weapon-main {
+  flex: 1;
+  min-width: 0;
+}
+.eqp-weapon-off {
+  padding-left: 6px;
+  border-left: 1px solid var(--border-light);
+}
+/* Dual-wield classes: #A_w2 always carries content (the "(Fist or Shield)"
+   placeholder) whenever an off-hand CAN be equipped, so the split is present
+   for the whole class, not only once a weapon is picked. Pin the main weapon
+   to the exact width it has as a single weapon — its namegroup is 50% of the
+   block, sitting after the 15px icon + 6px item gap, so the main half is
+   `50% + 21px`. The off-hand then takes whatever remains (a narrower half),
+   so appearing off-hand shrinks the OFF-hand rather than the main weapon. */
+.eqp-weapon-pair:has(#A_w2:not(:empty)) .eqp-weapon-main {
+  flex: 0 0 calc(50% + 21px);
+  min-width: 0;
+}
+.eqp-weapon-pair:has(#A_w2:not(:empty)) .eqp-weapon-off {
+  flex: 1 1 0;
+  min-width: 0;
+}
+/* width:100% would overflow here: the namegroup sits in a flex row next to
+   a 15px icon + 6px gap, and its base rule forbids shrinking. Let flexbox
+   size it to the remaining space instead. */
+.eqp-weapon-pair:has(#A_w2:not(:empty)) .eqp-namegroup {
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.eqp-weapon-pair:has(#A_w2:not(:empty)) .eqp-cards select,
+.eqp-weapon-pair:has(#A_w2:not(:empty)) .eqp-cards .cbx {
+  width: 100%;
+}
+/* Until a real off-hand weapon is equipped, the engine leaves every card
+   container in the off-hand empty — hide the whole cards block so its
+   connector border doesn't render as a dangling line under the
+   "(Fist or Shield)" box. It reappears once the engine injects the
+   card selects. */
+.eqp-weapon-off .eqp-cards:not(:has(select)) {
+  display: none;
+}
+/* The off-hand refine is only populated by the engine once a real off-hand
+   weapon is equipped; hide the empty container so it doesn't render as a
+   thin sliver next to the "(Fist or Shield)" placeholder. */
+.eqp-offrefine:empty {
+  display: none;
+}
+body.t-dark .eqp-weapon-off {
+  border-left-color: #3a4656;
+}
+body.t-payon .eqp-weapon-off {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+.eqp-weapon-off:has(#A_w2:empty) {
+  display: none;
+}
+#A_SobWeaponName {
+  display: none;
+}
+.eqp-offrefine {
+  flex-shrink: 0;
+  max-width: 56px;
+  font-size: 0;
+  overflow: hidden;
+}
+.eqp-offrefine select {
+  font-size: 12px;
+  width: 100%;
+}
 /* Flat, bordered boxes instead of the site-wide pill-shaped accent-orange
    select/combobox — matches the approved mockup's plainer dropdown look. */
 .eqp-item select,
@@ -1177,11 +1288,20 @@ body.t-payon .eqp-cards .cbx-trigger {
   border-color: rgba(255, 255, 255, 0.12);
   color: #dbe2ea;
 }
+/* Card slots get a subtly darker fill than the item/refine row above them,
+   just enough to read as a distinct tier without a hard color jump. */
+.eqp-cards select,
+.eqp-cards .cbx-trigger {
+  background-color: #f0f2f5 !important;
+}
+body.t-dark .eqp-cards select,
+body.t-dark .eqp-cards .cbx-trigger {
+  background-color: #1c232c !important;
+}
+body.t-payon .eqp-cards select,
+body.t-payon .eqp-cards .cbx-trigger {
+  background-color: rgba(30, 38, 48, 0.55) !important;
+}
 select[name="A_HSE_HEAD1"] {
   display: none;
-}
-@media (max-width: 700px) {
-  .eqp-grid {
-    grid-template-columns: 1fr;
-  }
 }
