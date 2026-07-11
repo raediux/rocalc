@@ -56,6 +56,11 @@
   // engine's else-branch would set it to #000).
   var engineThemes = themes;
   themes = function () {
+    // Light (index 0) was removed from the select. Any value that no longer
+    // maps to an option (selectedIndex -1) -- e.g. an old saved URL carrying a
+    // removed theme, or an engine-restored "last used" Light -- is coerced to
+    // Glass Dark before the engine paints, so no runtime path can render light.
+    if (c.theme.selectedIndex === -1) c.theme.value = String(T);
     engineThemes();
     var v = 1 * c.theme.value;
     var dark = v == 3 || v == 4 || v == 5 || v == 6 || v == T;

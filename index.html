@@ -79,7 +79,7 @@ Calc's theme: <select id="theme" onChange="themes()"><option value="0">Original<
 <div id="changelog" style="display:none"></div>
 <p style="font-size:20px; margin:0 0 8px 0;">OPTIONS</p>
 <div class="options-row">
-<span>Calc's theme: <select id="theme" onChange="themes()"><option value="7">Glass Dark</option><option value="0">Light</option></select></span>
+<span>Calc's theme: <select id="theme" onChange="themes()"><option value="7">Glass Dark</option></select></span>
 <span>Server's max ASPD: <select id="maxASPD" onChange="StAllCalc() | calc()"><option value="0">190</option><option value="1">191</option><option value="2">192</option><option value="3">193</option><option value="4">194</option><option value="5">195</option></select></span>
 <span><input type="checkbox" id="restrict_jobequip" onClick="ClickJob() | StAllCalc() | StCalc()" checked>Equipment job restrictions (this will clear equip, cards, and stats)</span>
 <span><input type="checkbox" id="restrict_equipslot" onClick="StAllCalc() | calc()" checked><span class=name>Equipment slot restrictions<span class=nametext>This disables shield / left hand when using a two-handed weapon, and mid/lower headgear when equipping a headgear that uses more than 1 headgear slot.</span></span></span>
@@ -104,6 +104,9 @@ Calc's theme: <select id="theme" onChange="themes()"><option value="0">Original<
 <input type="button" value="Local Load" onclick="LoadLocal()">
 <input type="button" value="Delete selected save" onclick="delLocal()" style="margin-left:30px;">
 <br>
+<input type="button" value="Save as URL  & copy to Clipboard" onclick="URLOUT()"> <a id="saveURL"></a><input type="text" name="URL_TEXT" placeholder="(When clicking 'Save as URL' button, your character's URL will apear here)" style="width:68%;">
+<br>
+<input type="button" value="Load URL" onclick="URLIN(1)"> <input type="text" id="otherURL_TEXT" placeholder="(Paste a saved character URL here, then press the 'Load URL' button)" style="width:73%;">
 </div>
 <br>
 
@@ -657,6 +660,7 @@ Re-designed and adapted for Project Baldur by Wrath<br>
 <script type="text/javascript" src="slot-icons.js"></script>
 <script type="text/javascript" src="stat-input.js"></script>
 <script type="text/javascript" src="card-enchant-sync.js"></script>
+<script type="text/javascript" src="url-save-silent.js"></script>
 
 </form>
 <span id="popupURL"></span>
