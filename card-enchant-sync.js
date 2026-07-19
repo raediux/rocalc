@@ -1437,6 +1437,17 @@
       { name: "Wormtail", full: "DEX +2, HIT +5", delta: "+5 (new)" },
       { name: "Zhu Po Long", full: "AGI +1, Crit Rate +4", delta: "+1 (3 -> 4)" },
     ]},
+    // First non-card group in this table. Every group above is a CARD slot
+    // ("Weapon" above means cards that slot into weapons); this one is the
+    // equipment itself, hence the distinct label. Structurally identical --
+    // the renderer only reads group.slot plus a group.cards array of
+    // {name, full, delta}, so the key stays "cards" even though these are
+    // items. Data source is m_Item in item_2026-04-06.js (not m_Card), where
+    // the effect pairs are token/value: 30-39 = % vs race, 40-49 = % vs
+    // element, matching the same n_tok numbering the card data uses.
+    { slot: "Weapons (equipment, not cards)", cards: [
+      { name: "Kaiser Knuckle", full: "ATK dmg +20% vs Undead race, +20% vs Water/Earth/Fire/Wind", delta: "Undead race 5% -> 20%; Water/Earth/Fire/Wind 10% -> 20% each" },
+    ]},
   ];
 
   // Static (equip-independent) — built once and left alone, unlike the
@@ -1464,7 +1475,7 @@
     var container = document.getElementById("fullChangelogSection");
     if (!container || container.__cesBuilt) return;
     container.__cesBuilt = true;
-    var rows = ['<div class="ces-fc-heading">Card</div>'];
+    var rows = ['<div class="ces-fc-heading">Item</div>'];
     // Explicit <colgroup> widths, not just CSS on the <td>s — needed because
     // the slot-header rows below use a single colspan=3 cell, which breaks
     // table-layout:fixed's usual "read widths off the first row" column
