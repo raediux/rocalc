@@ -30,7 +30,11 @@
 //   - Firelock Soldier (card 304, shoes): %MaxHP/%MaxSP refine>=9,+10% ->
 //     refine>=7,+9%.
 //   - Gold Acidus (card 407, shoes): %MaxHP/%MaxSP "additional" layer at
-//     refine<=4, 4%->5% each; HP/SP Recovery Rate at refine<=4, 5%->15% each.
+//     refine<=4, 4%->5% each; HP/SP Recovery Rate at refine<=4, 5%->10% each
+//     (REVISED 2026-07-28 from an earlier 5%->15% — Ray's changelog update
+//     "Reduced HP and SP recovery rate from 15% to 10%"; both live lines
+//     `n_A_SHOES_REFINE<=4&&407==n_A_card[13]&&(I+=10)`, one feeding n_A_HPR
+//     and one feeding n_A_SPR).
 //   - Blue Acidus (card 179, headgear): SP Recovery Rate 5%->15% (CORRECTED
 //     2026-07-08 from an earlier 5%->20% overshoot — Ray's in-game tooltip,
 //     card ID 4379, shows +15% at refine <=4). Both live SP-recovery lines
@@ -173,7 +177,10 @@
     // itself: foot.js hardcodes `2==n_A_JobClass()&&391==n_A_card[13]&&
     // (n_A_LUCKY+=5)`. Live-verified: Thief + Wild Rose in the shoes-card
     // slot moves n_A_LUCKY from 1.1 to 6.1 (+5), no delta entry needed.
-    "Wild Rose": { n_A_LUK: 1 }, // Added 1 LUK
+    // 2026-07-28: "Increased AGI from 1 to 2" — vanilla's own AGI is code2=1
+    // ([391,6,"Wild Rose","<b>[Thief class]</b> Perfect Dodge +5",2,1,0]),
+    // matching the changelog baseline exactly.
+    "Wild Rose": { n_A_LUK: 1, n_A_AGI: 1 }, // Added 1 LUK; AGI 1->2
     "Eclipse": { n_A_VIT: 1 }, // VIT 1->2
     // This is "Dancing_Dragon_Card" in the changelog — same card, this
     // data's own name is "Zhu Po Long" (confirmed via its own code comment).
@@ -279,6 +286,20 @@
     // regardless of whether the combo condition is modeled — so no combo-
     // detection logic was needed here at all.
     "Verit": { n_A_DEF: 1 }, // new DEF+1 (existing %MaxHP/%MaxSP+8% untouched)
+
+    // Batch added 2026-07-28 — each baseline read straight from the card's
+    // own raw m_Card array (not the changelog's wording) per the standing
+    // methodology, and each matches the changelog's stated "from" value.
+    // Green Ferus [408,6,"Green Ferus",0,3,1,15,10,0] = VIT+1 (code3),
+    // %MaxHP+10% (code15, untouched by the changelog). Shoes slot
+    // (m_CardSort group 6, the same group as Wild Rose/Megalith/Gold Acidus).
+    "Green Ferus": { n_A_VIT: 1 }, // VIT 1->2
+    // Gryphon [277,1,"Gryphon","...[Swordman] ... 1% chance to cast Bowling
+    // Bash Lvl 5...",9,2,10,7,0] = FLEE+2 (code9), Crit Rate+7 (code10,
+    // untouched). Weapon card (m_CardSort groups 0 and 1). Its Bowling Bash
+    // proc is a chance-triggered skill cast — no field for that, same
+    // category as every other proc effect in this file.
+    "Gryphon": { n_A_FLEE: 3 }, // FLEE 2->5
   };
 
   // Cards whose ENTIRE automated effect lives in an engine edit (foot.js),
@@ -301,7 +322,7 @@
     // below. Gold Acidus's unconditional %MaxHP/%MaxSP base (code15/16) is
     // separately handled in CODE_DELTAS above; this entry covers only its
     // refine<=4 "additional" engine-edit layer.
-    "Gold Acidus": ["Refine <=4: additional MaxHP +5%, MaxSP +5%, HP/SP Recovery Rate +15% (was +4%/+4%/+5%)"],
+    "Gold Acidus": ["Refine <=4: additional MaxHP +5%, MaxSP +5%, HP/SP Recovery Rate +10% (was +4%/+4%/+5%)"],
     "Blue Acidus": ["SP Recovery Rate +15% (was +5%; refine<=4 in head1, unconditional in head2)"],
     // 2026-07-06: card.js data edits (not foot.js formula edits) — a slot
     // reassignment and two renames/reworks Ray approved as a card.js
@@ -374,6 +395,42 @@
     // further +20 moved it to 33 (+50% total), confirming the delta math.
     "Wooden Golem": [{ code: 75, delta: 20, label: "+20% HP Recovery Rate (30%->50%)" }],
     "Yellow Novus": [{ code: 75, delta: 10, label: "+10% HP Recovery Rate (10%->20%)" }],
+    // Sohee [91,6,"Sohee",0,16,15,76,3,0] (shoes) — code76 is the SP-side
+    // twin of the code75 natural-HP-regen mechanism above: confirmed in
+    // foot.js, `n_A_SPR=Math.floor(n_A_INT/6)+Math.floor(n_A_MaxSP/100)+1,
+    // I=100,I+=3*SkillSearch(269),I+=n_tok[76]+n_A_Buf9[46],...,
+    // n_A_SPR=Math.floor(n_A_SPR*I/100)` — a real, displayed stat reached
+    // through the same generic StPlusCard dispatch. Vanilla's own value (3)
+    // matches the changelog's baseline exactly; its %MaxSP+15% (code16) is
+    // untouched. Added 2026-07-28 ("Increased SP Recovery from 3% to 7%").
+    "Sohee": [{ code: 76, delta: 4, label: "+4% SP Recovery Rate (3%->7%)" }],
+    // Solider [317,4,"Solider",0,18,2,19,2,0] (body slot, confirmed live —
+    // only offered in A_body_card) — vanilla DEF+2 (code18) and MDEF+2
+    // (code19). Changelog 2026-07-28: "Changed 2 DEF to 10% DEF Rate,
+    // increased MDEF from 2 to 3", so the flat DEF is cancelled outright and
+    // replaced with a percentage.
+    // The %-DEF half rides the engine's ONE existing percentage hook on the
+    // player's own hard/equipment DEF, in foot.js right after n_A_totalDEF is
+    // assembled from n_A_DEF plus the refine-derived n_A_DEFplus:
+    //   n_tok[85]&&(n_A_totalDEF-=Math.floor(n_A_totalDEF*n_tok[85]/100))
+    // It's written as a REDUCTION, so "+10% DEF rate" is expressed as a code
+    // 85 delta of -10. Safe to co-opt: scanned every m_Card entry (533 of
+    // them) — code 85 has ZERO users in vanilla card data, and n_tok[85]
+    // reads 0 on a bare character. This also lands at exactly the right
+    // point in the pipeline (after refine DEF is folded in, before the
+    // status/skill reductions and before the SRV<50 DEF cap of 99), so no
+    // engine edit is needed at all.
+    // Two judgement calls worth knowing about, both flagged to Ray:
+    //   1. It scales HARD/equipment DEF only (the left number in the "DEF
+    //      45+30" display), not the VIT-derived soft DEF — matching how
+    //      rAthena's own bDefRate behaves.
+    //   2. Rounding: since the engine floors a now-negative product, the
+    //      gain rounds UP (a 45 DEF character gains 5, not 4.5->4).
+    "Solider": [
+      { code: 18, delta: -2, hidden: true }, // flat DEF+2 removed; folded into the label below
+      { code: 85, delta: -10, label: "DEF +2 replaced with DEF Rate +10%" },
+      { code: 19, delta: 1, label: "+1 MDEF (2->3)" },
+    ],
     // Deviace (weapon card): vanilla already gives +7% ATK dmg vs Brute(32),
     // Plant(33), Insect(34), Demi-Human(37) via its own card codes — matches
     // [20,1,"Deviace",0,37,7,32,7,33,7,34,7,0] exactly. Changelog: "Changed
@@ -753,13 +810,33 @@
     // Megalith (shoes slot): vanilla refine<=5 gives MDEF+7 only (confirmed
     // via foot.js: "n_A_SHOES_REFINE <= 5 && 381 == n_A_card[13]"). Changelog
     // tightens the threshold to <=4 and adds VIT+2/DEF+4 under the same
-    // condition (confirmed with Ray).
+    // condition (confirmed with Ray). VIT raised 2->3 on 2026-07-28
+    // ("Increased VIT from 2 to 3") — note the "2" baseline here is OUR OWN
+    // earlier addition, not a vanilla value (vanilla grants MDEF only).
     "Megalith": {
       refineVar: "n_A_SHOES_REFINE",
       apply: function (refine) {
         var vMDEF = refine <= 5 ? 7 : 0;
-        var nMDEF = refine <= 4 ? 7 : 0, nVIT = refine <= 4 ? 2 : 0, nDEF = refine <= 4 ? 4 : 0;
+        var nMDEF = refine <= 4 ? 7 : 0, nVIT = refine <= 4 ? 3 : 0, nDEF = refine <= 4 ? 4 : 0;
         return { n_A_MDEF: nMDEF - vMDEF, n_A_VIT: nVIT, n_A_DEF: nDEF };
+      },
+    },
+    // Matyr [90,6,"Matyr",0,2,1,15,10,0] (shoes slot, m_CardSort group 6) —
+    // vanilla is AGI+1 (code2) and %MaxHP+10% (code15), both unconditional
+    // and both untouched by the changelog. Added 2026-07-28: "when +7 or
+    // above, +1 AGI and +1 STR" — a wholly NEW refine-gated layer, so there
+    // is nothing of vanilla's to cancel (confirmed: card ID 90 has zero
+    // hardcoded checks anywhere in foot.js — no `90==n_A_card[N]` and no
+    // `CardNumSearch(90)`), which is why apply() returns the raw bonus
+    // rather than a custom-minus-vanilla difference. Both stats are base
+    // stats, so they route through baseStatCodeInjection/StPlusCard (see
+    // STAT_CODE) exactly like Sting's "+N all stats" rework, not through a
+    // post-hoc global add.
+    "Matyr": {
+      refineVar: "n_A_SHOES_REFINE",
+      apply: function (refine) {
+        var bonus = refine >= 7 ? 1 : 0;
+        return { n_A_AGI: bonus, n_A_STR: bonus };
       },
     },
     // Sting (left/accessory slot): vanilla refine>=9 gives MDEF+5 (confirmed
@@ -1341,6 +1418,7 @@
       { name: "Female Thief Bug", full: "AGI +2, FLEE +1", delta: "+1 AGI (1 -> 2)" },
       { name: "Fur Seal", full: "HIT +12, FLEE +4, [Acolyte only] CRIT +10 vs Undead/Demon", delta: "+2 HIT (10->12), +1 FLEE (3->4), +1 CRIT vs Undead/Demon (9->10, Acolyte only)" },
       { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
+      { name: "Gryphon", full: "FLEE +5, Crit Rate +7 ([Swordman only] 1% chance to cast Bowling Bash Lv5 on hit)", delta: "+3 FLEE (2 -> 5)" },
       { name: "Hornet", full: "STR +1, ATK +10", delta: "+7 ATK (3 -> 10)" },
       { name: "Howard Alt-Eisen", full: "HIT +30, ASPD +1 (was -5)", delta: "+6 ASPD" },
       { name: "Lunatic", full: "LUK +3, Crit Rate +1, Perfect Dodge +1", delta: "+2 LUK (1 -> 3)" },
@@ -1372,6 +1450,7 @@
       { name: "Remover", full: "MaxHP +800 base, -20/refine", delta: "-40/refine -> -20/refine" },
       { name: "Savage", full: "VIT +5, MaxHP +200", delta: "+2 VIT (3 -> 5), +200 MaxHP (new)" },
       { name: "Skogul", full: "Bleeding resist +50% (offsets a 30% self-Bleeding proc, not otherwise reflected)", delta: "+50% (new)" },
+      { name: "Solider", full: "DEF Rate +10%, MDEF +3", delta: "DEF +2 replaced with DEF Rate +10%; MDEF 2 -> 3" },
       { name: "Steel Chonchon", full: "DEF +2, Wind resist +10% · [+ Chonchon] ASPD +3%", delta: "combo +3% ASPD (new, w/ Chonchon)" },
       { name: "Super Picky", full: "VIT +3, MaxHP +100", delta: "+2 VIT (1 -> 3)" },
       { name: "Thief Bug", full: "AGI +1, FLEE +4", delta: "+4 FLEE (new)" },
@@ -1416,14 +1495,17 @@
       { name: "Alarm", full: "VIT +1, MaxHP +400", delta: "+100 (300 -> 400)" },
       { name: "Chonchon", full: "FLEE +2, AGI +3 · [+ Dragon Fly] FLEE +20 · [+ Steel Chonchon] ASPD +3%", delta: "+2 AGI (1 -> 3); combo +2 FLEE (18 -> 20, w/ Dragon Fly); combo +3% ASPD (new, w/ Steel Chonchon)" },
       { name: "Freezer", full: "MaxHP +400 (+10% dmg with Bash at refine 9-10)", delta: "+100 (300 -> 400)" },
-      { name: "Gold Acidus", full: "MaxHP/MaxSP +5% · [Refine ≤4] +5% more each, HP/SP Recovery Rate +15%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 15%" },
+      { name: "Gold Acidus", full: "MaxHP/MaxSP +5% · [Refine ≤4] +5% more each, HP/SP Recovery Rate +10%", delta: "Base 4% -> 5%; additional layer 4% -> 5%, recovery 5% -> 10%" },
+      { name: "Green Ferus", full: "VIT +2, MaxHP +10%", delta: "+1 VIT (1 -> 2)" },
       { name: "Ice Titan", full: "VIT +5 (0.3%->5% chance for temporary +10->15 DEF for 10s)", delta: "+3 VIT (2 -> 5)" },
       { name: "Male Thief Bug", full: "AGI +3, FLEE +2", delta: "+1 AGI (2 -> 3), +2 FLEE (new)" },
-      { name: "Megalith", full: "[Refine ≤4] MDEF +7, VIT +2, DEF +4", delta: "Refine ≤5 -> ≤4; added VIT+2/DEF+4" },
+      { name: "Matyr", full: "AGI +1, MaxHP +10% · [Refine +7] AGI +1, STR +1", delta: "Refine +7 bonus: +1 AGI, +1 STR (new)" },
+      { name: "Megalith", full: "[Refine ≤4] MDEF +7, VIT +3, DEF +4", delta: "Refine ≤5 -> ≤4; added VIT+3/DEF+4" },
       { name: "Odium of Thanatos", full: "AGI -4 base, +1 AGI per refine level", delta: "Base AGI -5 -> -4" },
       { name: "Raggler", full: "STR +2, VIT +2", delta: "+1 STR (1 -> 2), +1 VIT (1 -> 2)" },
+      { name: "Sohee", full: "MaxSP +15%, SP Recovery Rate +7%", delta: "+4% SP Recovery Rate (3% -> 7%)" },
       { name: "Verit", full: "MaxHP +8%, MaxSP +8%, DEF +1 (3% chance to cast Turn Undead via Skull Ring combo)", delta: "+1 DEF (new)" },
-      { name: "Wild Rose", full: "AGI +1, LUK +1, [Thief only] Perfect Dodge +5", delta: "+1 LUK (new)" },
+      { name: "Wild Rose", full: "AGI +2, LUK +1, [Thief only] Perfect Dodge +5", delta: "+1 AGI (1 -> 2), +1 LUK (new)" },
       { name: "Zombie Slaughter", full: "+5% ATK/MATK dmg vs Demi-Human (50->100 HP per kill proc)", delta: "+4% each (1% -> 5%)" },
     ]},
     { slot: "Accessory", cards: [
