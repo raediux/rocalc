@@ -73,6 +73,12 @@
 //     per-second math, so there's no "raw ASPD" global left to patch
 //     post-hoc. Inserted `159==n_A_card[3]&&(I+=6)` directly into the
 //     additive block instead of reverse-computing the transform.
+//   - Solider (card 317, body): a NEW positive %-DEF term, folded into the
+//     hard-DEF assembly itself so it shares the engine's SINGLE rounding
+//     step — `n_A_totalDEF=Math.round((n_A_DEF+66*n_A_DEFplus/100)*
+//     (100+n_tok[300])/100)` (all three server branches given the same
+//     treatment). Vanilla has no way to express a DEF-rate BONUS at all;
+//     see the Solider entry in CODE_DELTAS for the full reasoning.
 // Everything else in STAT_DELTAS/REFINE_DELTAS/CODE_DELTAS below needs no
 // engine edits — see ENGINE_EDIT_SUMMARY further down for how these six
 // pure-engine-edit cards still show up in the summary panel.
@@ -409,26 +415,46 @@
     // (code19). Changelog 2026-07-28: "Changed 2 DEF to 10% DEF Rate,
     // increased MDEF from 2 to 3", so the flat DEF is cancelled outright and
     // replaced with a percentage.
-    // The %-DEF half rides the engine's ONE existing percentage hook on the
-    // player's own hard/equipment DEF, in foot.js right after n_A_totalDEF is
-    // assembled from n_A_DEF plus the refine-derived n_A_DEFplus:
+    // The %-DEF half needed a NEW engine line (the project's 11th edit), and
+    // took two corrections from Ray to get the ROUNDING right — worth
+    // reading before touching any other %-of-a-stat effect.
+    // Vanilla's only percentage hook on the player's own hard DEF is written
+    // as a REDUCTION —
     //   n_tok[85]&&(n_A_totalDEF-=Math.floor(n_A_totalDEF*n_tok[85]/100))
-    // It's written as a REDUCTION, so "+10% DEF rate" is expressed as a code
-    // 85 delta of -10. Safe to co-opt: scanned every m_Card entry (533 of
-    // them) — code 85 has ZERO users in vanilla card data, and n_tok[85]
-    // reads 0 on a bare character. This also lands at exactly the right
-    // point in the pipeline (after refine DEF is folded in, before the
-    // status/skill reductions and before the SRV<50 DEF cap of 99), so no
-    // engine edit is needed at all.
-    // Two judgement calls worth knowing about, both flagged to Ray:
-    //   1. It scales HARD/equipment DEF only (the left number in the "DEF
-    //      45+30" display), not the VIT-derived soft DEF — matching how
-    //      rAthena's own bDefRate behaves.
-    //   2. Rounding: since the engine floors a now-negative product, the
-    //      gain rounds UP (a 45 DEF character gains 5, not 4.5->4).
+    // — so a first pass expressed "+10% DEF rate" as a code 85 delta of -10.
+    // Flooring a now-negative product makes the GAIN round UP (33 DEF -> +4),
+    // which Ray rejected. A second pass added a positive Math.round twin as a
+    // separate line, which fixed the upward bias but was still wrong, because
+    // it rounded a SECOND time on top of the engine's own rounding.
+    // How the engine really works (measured live, not inferred): every
+    // fractional hard-DEF contribution is pooled into ONE accumulator and
+    // rounded exactly ONCE at the end. Each refine level is worth 0.66 DEF,
+    // and `n_A_totalDEF=n_A_DEF+Math.round(66*n_A_DEFplus/100)` sums the
+    // refine levels across ALL slots before rounding — so one item at +3
+    // gives 2 DEF (1.98), but TWO items at +1 give 1 DEF total (1.32), not
+    // 1+1. Ray's phrasing: "+1 is still 1 and needs the remaining little bit
+    // from other sources."
+    // So the % is folded into that same single rounding rather than applied
+    // to the already-rounded result:
+    //   n_A_totalDEF=Math.round((n_A_DEF+66*n_A_DEFplus/100)*(100+n_tok[300])/100)
+    // With n_tok[300]==0 this is arithmetically identical to vanilla (n_A_DEF
+    // is always an integer, so Math.round(int+frac) === int+Math.round(frac));
+    // all three server branches of that ternary got the same treatment so the
+    // effect can't silently vanish if the server field ever changes.
+    // Code 300 comes from the engine's SECOND generic dispatch range
+    // (`for(_=290;_<=339;_++)n_tok[_]=0,...+=StPlusCard(_)`, which runs early
+    // in StAllCalc, far ahead of the DEF assembly) and has zero readers or
+    // writers anywhere in foot/head/card data — so StPlusCard(300) is ours
+    // alone. The assembly is also the right place in the pipeline: after
+    // refine DEF is folded in, before the status/skill reductions and before
+    // the SRV<50 DEF cap.
+    // Confirmed with Ray: this scales HARD/equipment DEF only (the left
+    // number in the "DEF 33+50" display), not the VIT-derived soft DEF —
+    // matching rAthena's own bDefRate. Note the card gives nothing at all to
+    // a character with no gear DEF, unlike the flat +2 it replaces.
     "Solider": [
       { code: 18, delta: -2, hidden: true }, // flat DEF+2 removed; folded into the label below
-      { code: 85, delta: -10, label: "DEF +2 replaced with DEF Rate +10%" },
+      { code: 300, delta: 10, label: "DEF +2 replaced with DEF Rate +10%" },
       { code: 19, delta: 1, label: "+1 MDEF (2->3)" },
     ],
     // Deviace (weapon card): vanilla already gives +7% ATK dmg vs Brute(32),
@@ -752,20 +778,43 @@
   // recalc to pick up the change.
   var codeDeltaTotals = {};
 
-  // Base-stat deltas (STR/AGI/VIT/INT/DEX/LUK) can't be bolted on post-hoc the
-  // way DEF/MDEF/MaxHP/etc. can. The six base stats are consumed INSIDE
-  // StAllCalc to derive everything downstream — ATK, HIT, FLEE, CRI, MaxHP/SP,
-  // ASPD, and their own on-screen "+N" bonus text — so bumping the global
-  // AFTER the original StAllCalc returned changes the raw n_A_STR value but
-  // nothing that reads it, and the card silently does nothing (Ray hit this
-  // with the reworked Sting: "+1 all stats" listed in the panel, zero actual
-  // effect). Instead these are injected through the SAME StPlusCard hook the
-  // generic code deltas use: StCalc seeds each stat bonus via StPlusCard(1..6)
-  // (`n+=StPlusCard(1)`, ..., `l+=StPlusCard(6)`), so a value added here flows
-  // through the normal pipeline and reaches every derived stat and display.
-  // Keyed by those same stat-code numbers; populated only transiently by the
-  // patched StAllCalc's second pass (see patchStAllCalc below).
-  var STAT_CODE = { n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6 };
+  // Globals that CANNOT be bolted on post-hoc, mapped to the generic code
+  // that feeds them. Each of these is consumed INSIDE StAllCalc to derive
+  // something else, so bumping the global after the original StAllCalc
+  // returned changes the raw number but nothing that reads it.
+  //
+  //   1-6 (STR/AGI/VIT/INT/DEX/LUK): the six base stats drive everything
+  //     downstream — ATK, HIT, FLEE, CRI, MaxHP/SP, ASPD, and their own
+  //     on-screen "+N" bonus text. Ray hit this with the reworked Sting:
+  //     "+1 all stats" listed in the panel, zero actual effect. StCalc seeds
+  //     each one via StPlusCard(1..6) (`n+=StPlusCard(1)`, ..., `l+=StPlusCard(6)`).
+  //   18 (DEF) and 19 (MDEF): added 2026-07-28 after Ray reported Goat
+  //     showing the wrong numbers on screen. `n_A_DEF`/`n_A_MDEF` are only
+  //     the RAW equipment totals — StAllCalc immediately derives the values
+  //     that actually matter from them and never looks back:
+  //       n_A_totalDEF = n_A_DEF + <refine-derived n_A_DEFplus>, then the
+  //       status/skill reductions and the DEF cap — and this is the number
+  //       the damage formulas consume AND the number printed to #A_totalDEF;
+  //       n_A_MDEF likewise feeds mdefReduction() and is printed to #A_MDEF
+  //       /#A_RealMDEF from inside StAllCalc.
+  //     So a post-hoc `n_A_DEF += 3` moved the raw global while the on-screen
+  //     DEF and the damage math both kept vanilla's number (Goat at body
+  //     refine 0 displayed "2+50" instead of "5+50", MDEF "5+50" instead of
+  //     "7+50"). Injecting at code 18/19 instead is exactly equivalent
+  //     arithmetically — foot.js assembles them as `n_A_DEF=n_tok[18]+
+  //     n_A_Buf9[34]` and `n_A_MDEF=n_tok[19]+n_A_Buf9[35]`, and those are
+  //     the ONLY reads of either n_tok slot in the whole engine (verified) —
+  //     but it lands upstream of every derivation instead of after it. The
+  //     CODE_DELTAS entries that already used code 18 (Agav, Solider) were
+  //     always correct for exactly this reason; only the globals-based
+  //     mechanisms were affected.
+  //
+  // Keyed by those code numbers; populated only transiently by the patched
+  // StAllCalc's second pass (see patchStAllCalc below).
+  var STAT_CODE = {
+    n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6,
+    n_A_DEF: 18, n_A_MDEF: 19,
+  };
   var baseStatCodeInjection = {};
 
   function patchStPlusCard() {
@@ -947,19 +996,27 @@
         return { n_A_FLEE: delta, n_tok60: delta };
       },
     },
-    // Gibbet (headgear, selectable in BOTH head1 and head2 — CORRECTED
-    // 2026-07-07, an earlier pass wrongly assumed head2-only): foot.js has
-    // TWO hardcoded checks, `213==n_A_card[9]&&(n_A_MDEF+=5)` (head2) and
-    // `213==n_A_card[8]&&(n_A_MDEF+=5)` (head1) — IDENTICAL, both
-    // unconditional +5, no refine gate on either. So unlike Carat (where the
-    // two slots' checks genuinely differed and canceling the wrong one
-    // caused real double-stacking), Gibbet's vanilla contribution is the
-    // same flat +5 regardless of which head slot it's in — the `vMDEF=5`
-    // constant below is correct either way, no slot-awareness needed.
+    // Gibbet (headgear, selectable in BOTH head1 and head2). CORRECTED AGAIN
+    // 2026-07-28 — the previous comment here claimed foot.js's two hardcoded
+    // checks were "IDENTICAL, both unconditional +5, no refine gate on
+    // either", so `vMDEF` was a flat 5 with no slot-awareness. That was
+    // WRONG, and it caused a real bug (caught during the DEF/MDEF display
+    // regression sweep below): the two lines are
+    //   `213==n_A_card[9]&&(n_A_MDEF+=5)`                        (head2, unconditional)
+    //   `n_A_HEAD_REFINE<=5&&213==n_A_card[8]&&(n_A_MDEF+=5)`    (head1, refine<=5 ONLY)
+    // so in head1 above refine 5 vanilla contributes nothing, and cancelling
+    // a flat 5 there subtracted a bonus that was never granted — live-tested
+    // as MDEF **-5** at head1 refine 9 (the exact same failure shape as the
+    // Carat and Arclouze bugs). Now slot-aware like Carat: cancel only what
+    // vanilla actually gave in the slot the card is really in. Above the new
+    // threshold the card correctly contributes 0 from either slot.
+    // (`213==n_A_card[16/17/18]` also exist but are permanently dead — the
+    // engine only ever assigns n_A_card indices 0-15.)
     "Gibbet": {
       refineVar: "n_A_HEAD_REFINE",
       apply: function (refine) {
-        var vMDEF = 5; // unconditional in vanilla (head2)
+        var inHead1 = window.n_A_card && n_A_card[8] === 213;
+        var vMDEF = inHead1 ? (refine <= 5 ? 5 : 0) : 5;
         var nMDEF = refine <= 4 ? 7 : 0;
         return { n_A_MDEF: nMDEF - vMDEF };
       },
@@ -1191,10 +1248,10 @@
   // far only needed plain globals, Orc Baby's Neutral-resist half is the
   // first to need this.
   function applyGlobalDelta(name, amount) {
-    // Base stats are routed through baseStatCodeInjection / StPlusCard instead
-    // (see STAT_CODE above). Applying them here — after StAllCalc already
-    // derived everything from them — is a no-op on the derived stats/display
-    // and would double-count against the injected value.
+    // Base stats, DEF and MDEF are routed through baseStatCodeInjection /
+    // StPlusCard instead (see STAT_CODE above). Applying them here — after
+    // StAllCalc already derived everything from them — is a no-op on the
+    // derived stats/display and would double-count against the injected value.
     if (STAT_CODE[name]) return;
     var m = /^n_tok(\d+)$/.exec(name);
     if (m) {
@@ -1204,11 +1261,12 @@
     if (typeof window[name] === "number") window[name] += amount;
   }
 
-  // Sum every equipped card's base-stat contribution (across all delta
-  // mechanisms) into a { statCode: total } map, read from the globals the
-  // original StAllCalc just refreshed (refine levels, SU_* base-stat
-  // snapshots, job/target race). Fed into baseStatCodeInjection for the
-  // second pass so StPlusCard(1..6) hands these to StCalc.
+  // Sum every equipped card's inject-only contribution (base stats, DEF and
+  // MDEF — see STAT_CODE) across all delta mechanisms into a
+  // { code: total } map, read from the globals the original StAllCalc just
+  // refreshed (refine levels, SU_* base-stat snapshots, job/target race).
+  // Fed into baseStatCodeInjection for the second pass so StPlusCard hands
+  // these to StCalc / the DEF and MDEF assembly.
   function collectBaseStatCodeDeltas(names) {
     var acc = {};
     function fold(delta) {
