@@ -1577,15 +1577,21 @@
       { name: "Wormtail", full: "DEX +2, HIT +5", delta: "+5 (new)" },
       { name: "Zhu Po Long", full: "AGI +1, Crit Rate +4", delta: "+1 (3 -> 4)" },
     ]},
-    // First non-card group in this table. Every group above is a CARD slot
-    // ("Weapon" above means cards that slot into weapons); this one is the
-    // equipment itself, hence the distinct label. Structurally identical --
+    // Only non-card group in this table. Every group above is a CARD slot
+    // ("Weapon"/"Headgear" above mean cards that slot into those); this one
+    // is the equipment itself, hence the distinct label. Structurally
+    // identical --
     // the renderer only reads group.slot plus a group.cards array of
     // {name, full, delta}, so the key stays "cards" even though these are
     // items. Data source is m_Item in item_2026-04-06.js (not m_Card), where
-    // the effect pairs are token/value: 30-39 = % vs race, 40-49 = % vs
-    // element, matching the same n_tok numbering the card data uses.
-    { slot: "Weapons (equipment, not cards)", cards: [
+    // the effect pairs are token/value: 17 = flat ATK, 30-39 = % vs race,
+    // 40-49 = % vs element, matching the same n_tok numbering the card data
+    // uses. Originally labelled "Weapons (equipment, not cards)" when Kaiser
+    // Knuckle was its only row; broadened to "Equipment (not cards)" once
+    // Gangster Scarf (a lower headgear) joined it, rather than splitting off
+    // a per-slot group for every equipment type.
+    { slot: "Equipment (not cards)", cards: [
+      { name: "Gangster Scarf", full: "ATK +2 · [Rogue Class] enables Slyness Lv1", delta: "ATK 5 -> 2" },
       { name: "Kaiser Knuckle", full: "ATK dmg +20% vs Undead race, +20% vs Water/Earth/Fire/Wind", delta: "Undead race 5% -> 20%; Water/Earth/Fire/Wind 10% -> 20% each" },
     ]},
   ];

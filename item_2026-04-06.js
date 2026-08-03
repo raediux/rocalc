@@ -806,7 +806,7 @@ m_Item = [
 ,[803,50,0,2,0,0,20,45,"Whikebine's Black Cat Ears",0,"",24,2,9,10,10,3,70,10,0]
 ,[804,50,0,3,0,1,30,60,"Ship Captain Hat",0,"",5,1,13,100,25,7,0]
 ,[805,51,0,1,0,0,10,70,"Peco Ears",0,"",19,2,2,1,0]
-,[806,52,0,0,0,0,10,60,"Gangster Scarf",0,"<b>[Rogue Class]</b><br>Enables the use of ["+skillName(180,SRV)+"] Lvl 1",17,5,0]
+,[806,52,0,0,0,0,10,60,"Gangster Scarf",0,"<b>[Rogue Class]</b><br>Enables the use of ["+skillName(180,SRV)+"] Lvl 1",17,2,0]
 ,[807,52,0,0,0,0,20,60,"Ninja Scroll",0,"",89,1,0]
 ,[808,60,0,5,0,0,100,1,"Angel's Dress",0,"",6,4,193,1,0]
 ,[809,50,0,3,0,1,10,1,"Leaf Cat Hat",0,"",2,1,221,160,0]
