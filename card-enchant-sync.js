@@ -1580,19 +1580,32 @@
     // Only non-card group in this table. Every group above is a CARD slot
     // ("Weapon"/"Headgear" above mean cards that slot into those); this one
     // is the equipment itself, hence the distinct label. Structurally
-    // identical --
-    // the renderer only reads group.slot plus a group.cards array of
-    // {name, full, delta}, so the key stays "cards" even though these are
-    // items. Data source is m_Item in item_2026-04-06.js (not m_Card), where
-    // the effect pairs are token/value: 17 = flat ATK, 30-39 = % vs race,
-    // 40-49 = % vs element, matching the same n_tok numbering the card data
-    // uses. Originally labelled "Weapons (equipment, not cards)" when Kaiser
+    // identical -- the renderer only reads group.slot plus a group.cards
+    // array of {name, full, delta}, so the key stays "cards" even though
+    // these are items. Data source is m_Item in item_2026-04-06.js (not
+    // m_Card), where the effect pairs are token/value: 17 = flat ATK, 18 =
+    // flat DEF, 30-39 = % vs race, 40-49 = % vs element, matching the same
+    // n_tok numbering the card data uses. (Item_Setumei() in
+    // item_2026-04-06.js renders these tokens into the item info panel by
+    // itself, so items carrying only stat tokens keep an empty description
+    // string -- writing the same bonus into the description field would
+    // print it twice.)
+    // Originally labelled "Weapons (equipment, not cards)" when Kaiser
     // Knuckle was its only row; broadened to "Equipment (not cards)" once
     // Gangster Scarf (a lower headgear) joined it, rather than splitting off
     // a per-slot group for every equipment type.
     { slot: "Equipment (not cards)", cards: [
       { name: "Gangster Scarf", full: "ATK +2 · [Rogue Class] enables Slyness Lv1", delta: "ATK 5 -> 2" },
       { name: "Kaiser Knuckle", full: "ATK dmg +20% vs Undead race, +20% vs Water/Earth/Fire/Wind", delta: "Undead race 5% -> 20%; Water/Earth/Fire/Wind 10% -> 20% each" },
+      { name: "Knuckle Duster", full: "DEF +5", delta: "DEF +5 (new -- had no effects at all)" },
+      // Two "Bright Fury" rows exist in m_Item (ids 1326 and 1702) -- a
+      // duplicate inherited from the vanilla baseline, present in both, and
+      // indistinguishable in the dropdown (both rendered "Bright Fury [1]"
+      // in the same upper-headgear list). Per Ray the correct one is 1326,
+      // the STR+1 version; 1702 is hidden by moving its display-location
+      // field off every bucket (see the trailing comment on its row in
+      // item_2026-04-06.js) rather than deleted, since m_Item is positional.
+      { name: "Bright Fury", full: "STR +1, ASPD +2%", delta: "ATK dmg +2% vs Normal/Boss/Guardian removed" },
     ]},
   ];
 
