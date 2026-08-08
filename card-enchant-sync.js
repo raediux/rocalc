@@ -811,8 +811,30 @@
   //
   // Keyed by those code numbers; populated only transiently by the patched
   // StAllCalc's second pass (see patchStAllCalc below).
+  //   - n_A_MaxHP/n_A_MaxSP: added 2026-08-03, same failure mode as DEF/MDEF
+  //     above. The note further up claiming their "ADDITIVE phase" was safe to
+  //     patch post-hoc was half right and half wrong: the additive phase is
+  //     indeed distinct, but the %-based phase runs immediately AFTER it in
+  //     the same StAllCalc call (`n_A_MaxSP = Math.floor(n_A_MaxSP*(1+I/100))`
+  //     where I is %MaxSP from gear), so by the time the wrapper's
+  //     applyGlobalDelta ran, the multiply had already happened and our flat
+  //     delta missed it entirely. Vanilla's own equivalent bonuses go through
+  //     `I += n_tok[14]` and DO get multiplied, so the two disagreed on any
+  //     build with %MaxSP/%MaxHP gear: Ray's Monk 84 with Morpheus's Shawl +
+  //     Sohee (25%) had Carat add 110 where Crown of Mistress -- same +2 INT,
+  //     same +100 MaxSP, but a real item bonus -- added 135. Refine 9 in head1
+  //     erred the other way (147): vanilla's real +150 fires inside the % phase
+  //     while our -50 correction landed outside it.
+  //     Codes 13/14 are the exact analogue of 18/19: foot.js assembles
+  //     `I += n_tok[13] + n_A_Buf9[30]` (MaxHP) and `I += n_tok[14] +
+  //     n_A_Buf9[32]` (MaxSP), and those are the ONLY literal reads of either
+  //     slot in the whole engine (verified by occurrence count, same method as
+  //     DEF/MDEF). Injecting there is arithmetically identical but upstream of
+  //     the multiply. Affects Alarm/Savage/Freezer (STAT_DELTAS), Apocalypse/
+  //     Carat/Remover (REFINE_DELTAS) and Banshee/Agav/Echio (JOB_CARD_DELTAS).
   var STAT_CODE = {
     n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6,
+    n_A_MaxHP: 13, n_A_MaxSP: 14,
     n_A_DEF: 18, n_A_MDEF: 19,
   };
   var baseStatCodeInjection = {};
