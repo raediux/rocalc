@@ -111,12 +111,15 @@
   // on): n_A_DEF/n_A_MDEF (`n_A_DEF = n_tok[18]+n_A_Buf9[34]`, etc.),
   // n_A_HIT (`n_A_HIT += n_tok[8]+n_A_Buf9[36]`), n_A_FLEE, n_A_LUCKY
   // (confirmed this is Perfect Dodge's real variable name — `n_A_LUCKY +=
-  // n_tok[11]+n_A_Buf9[38]`), n_A_CRI (Crit Rate), n_A_ATK
+  // n_tok[11]+n_A_Buf9[38]`), n_A_ATK
   // (`n_A_ATK += I` before a LATER unrelated %-scaling step — patching
   // post-hoc still lands correctly since our delta rides along with
   // whatever %-scaling applies to everyone else's flat ATK), n_A_STR/AGI/
   // VIT/INT/DEX/LUK, n_A_MaxHP/MaxSP (their ADDITIVE phase specifically,
   // confirmed distinct from the %-based phase — see below).
+  // n_A_CRI was listed here too and that was WRONG — corrected 2026-08-13; it
+  // is finished off and printed inside StAllCalc, so it now routes through
+  // STAT_CODE/code 10 like DEF/MDEF and MaxHP/MaxSP. See the STAT_CODE comment.
   //
   // Four cards turned out to feed a LOCAL, function-scoped multiplicative
   // variable (same trap as Firelock Soldier) or a variable that gets
@@ -832,8 +835,27 @@
   //     DEF/MDEF). Injecting there is arithmetically identical but upstream of
   //     the multiply. Affects Alarm/Savage/Freezer (STAT_DELTAS), Apocalypse/
   //     Carat/Remover (REFINE_DELTAS) and Banshee/Agav/Echio (JOB_CARD_DELTAS).
+  //   - n_A_CRI: added 2026-08-13, same failure mode again. Ray reported
+  //     Soldier Skeleton still showing Crit Rate +9 instead of +10. Unlike
+  //     n_A_HIT/n_A_FLEE/n_A_LUCKY (which really are safe post-hoc additions),
+  //     n_A_CRI is finished off INSIDE StAllCalc: after the gear sum lands
+  //     (`n_A_CRI += I`) the engine applies the katar doubling
+  //     (`11 == n_A_WeaponType && (n_A_CRI *= 2)`), rounds to one decimal, honors
+  //     the crit-nullifying status (`n_A_Buf6[9] && (n_A_CRI = 0)`), and then
+  //     writes the number to screen itself via myInnerHtml("A_CRI", ...). So the
+  //     wrapper's `n_A_CRI += 1` moved the global but arrived after all four:
+  //     the panel kept printing vanilla's 9, a katar build got +1 where vanilla's
+  //     own crit cards get +2, and Buf6[9] no longer zeroed it. Code 10 is the
+  //     generic crit slot — foot.js reads it exactly once, as `I += n_tok[10] +
+  //     n_A_Buf9[39]` at the top of that same block (verified by occurrence
+  //     count, same method as DEF/MDEF and MaxHP/MaxSP) — so injecting there is
+  //     arithmetically identical but upstream of every step above. Affects
+  //     Soldier Skeleton and Zhu Po Long (STAT_DELTAS) and Fur Seal
+  //     (JOB_CARD_DELTAS); Chung E's per-refine CRIT already rode the engine's
+  //     own hardcoded line and was never affected.
   var STAT_CODE = {
     n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6,
+    n_A_CRI: 10,
     n_A_MaxHP: 13, n_A_MaxSP: 14,
     n_A_DEF: 18, n_A_MDEF: 19,
   };
@@ -1270,8 +1292,9 @@
   // far only needed plain globals, Orc Baby's Neutral-resist half is the
   // first to need this.
   function applyGlobalDelta(name, amount) {
-    // Base stats, DEF and MDEF are routed through baseStatCodeInjection /
-    // StPlusCard instead (see STAT_CODE above). Applying them here — after
+    // Base stats, crit, MaxHP/MaxSP, DEF and MDEF are routed through
+    // baseStatCodeInjection / StPlusCard instead (see STAT_CODE above, which is
+    // the authoritative list). Applying them here — after
     // StAllCalc already derived everything from them — is a no-op on the
     // derived stats/display and would double-count against the injected value.
     if (STAT_CODE[name]) return;
@@ -1283,8 +1306,8 @@
     if (typeof window[name] === "number") window[name] += amount;
   }
 
-  // Sum every equipped card's inject-only contribution (base stats, DEF and
-  // MDEF — see STAT_CODE) across all delta mechanisms into a
+  // Sum every equipped card's inject-only contribution (everything in
+  // STAT_CODE — base stats, crit, MaxHP/SP, DEF/MDEF) across all delta mechanisms into a
   // { code: total } map, read from the globals the original StAllCalc just
   // refreshed (refine levels, SU_* base-stat snapshots, job/target race).
   // Fed into baseStatCodeInjection for the second pass so StPlusCard hands
@@ -1628,6 +1651,15 @@
       // field off every bucket (see the trailing comment on its row in
       // item_2026-04-06.js) rather than deleted, since m_Item is positional.
       { name: "Bright Fury", full: "STR +1, ASPD +2%", delta: "ATK dmg +2% vs Normal/Boss/Guardian removed" },
+      // First ADDED item rather than a changed one -- every row above edits an
+      // existing m_Item entry, this one is a Baldur-only middle headgear
+      // (server item ID 18503) appended as m_Item index 1869. Its DEF lives in
+      // the row's own def field, not in an effect token, so there is nothing
+      // for card-enchant-sync to layer on at runtime; this entry exists purely
+      // so the item still shows up in the Adjustments panel like every other
+      // Baldur difference. "delta" reads as the whole item because vanilla has
+      // no counterpart to diff against.
+      { name: "Small Devil Horns", full: "DEF +2", delta: "new item -- does not exist in vanilla" },
     ]},
   ];
 
