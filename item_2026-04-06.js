@@ -1871,6 +1871,7 @@ m_Item = [
 ,[1866,100,0,0,0,0,0,0,"Cold Heart Set",0,"",28,8,12,3,0]
 ,[1867,64,0,1,0,1,10,1,"Aumdura's Benefit (B)",0,"Receive +5% experience from killing any monster.",77,-5,79,-5,0]
 ,[1868,64,0,1,0,1,10,1,"Aumdura's Benefit (A)",0,"",7,1,19,1,0]
+,[1869,51,1,2,0,0,10,1,"Small Devil Horns",0,"",0]	//Project Baldur custom item, not in vanilla (server item ID 18503). Middle headgear, DEF 2, weight 10, no slot, no level requirement, job 1 = all except Novice (same code Muffler/Shoes/Safety Ring use). Appended rather than inserted -- m_Item is positional, so every existing index, w_SE set id and saved build URL has to keep pointing at the same row.
 ];
 
 //[ id, display location, job that can use, atk/def, level of weapon, slots, weight, level required to use, "name of item", ?, "description", effect1, effect2, ..., 0 =? ]
