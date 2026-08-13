@@ -130,15 +130,43 @@
     // viewport, per spec. The glass theme puts backdrop-filter on .main and
     // other panel ancestors, which was hijacking the coordinates below.
     document.body.appendChild(pop);
+    // Focus lands on the trigger, not the search box, so Home/End address the
+    // list immediately — Home jumps straight to the top option, usually
+    // "(no X)", without first needing to tab out of the text field.
+    //
+    // It happens up here, before the measurements below, and with
+    // preventScroll: focusing an element that is partly outside the viewport
+    // otherwise scrolls it into view, which would both invalidate the rect
+    // measured on the next line and fire a scroll event that the global
+    // handler reads as "close the popup". preventScroll stops that outright;
+    // doing it first means that on a browser that ignores the option, the
+    // scroll at least settles before anything is measured.
+    entry.trigger.focus({ preventScroll: true });
     var r = entry.trigger.getBoundingClientRect();
     pop.style.position = "fixed";
     pop.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 340)) + "px";
     pop.style.top = r.bottom + 2 + "px";
     var popH = pop.offsetHeight;
-    if (r.bottom + 2 + popH > window.innerHeight && r.top - popH - 2 > 0)
-      pop.style.top = r.top - popH - 2 + "px";
+    // clientHeight, not innerHeight: a fixed element's containing block is the
+    // layout viewport, which excludes the horizontal scrollbar that
+    // innerHeight counts — using the latter drops the popup ~15px too low.
+    var vh = document.documentElement.clientHeight;
+    // Popups that don't fit below flip above the trigger, and are anchored by
+    // their BOTTOM edge rather than a frozen `top`: filtering shrinks the list,
+    // and a fixed top would leave the box floating far above the combo it
+    // belongs to. Anchoring the bottom keeps it glued as the height changes.
+    if (r.bottom + 2 + popH > vh && r.top - popH - 2 > 0) {
+      pop.style.top = "auto";
+      pop.style.bottom = vh - r.top + 2 + "px";
+    }
     entry.trigger.setAttribute("aria-expanded", "true");
-    openState = { sel: sel, pop: pop, input: input, list: list, all: all, items: all.slice(), active: -1 };
+    // anchor: where the trigger sat when the coordinates above were computed.
+    // The scroll handler closes on movement away from it rather than on any
+    // scroll at all, so a scroll that leaves the trigger where it is — the one
+    // the act of opening can itself cause, dispatched asynchronously once
+    // openState already exists — cannot slam the popup shut as it appears.
+    openState = { sel: sel, pop: pop, input: input, list: list, all: all, items: all.slice(), active: -1,
+                  anchor: { top: r.top, left: r.left } };
     // pre-highlight current selection
     for (var j = 0; j < all.length; j++) if (all[j].value === sel.value) { setActive(j); break; }
 
@@ -158,10 +186,6 @@
     });
     input.addEventListener("input", applyFilter);
     input.addEventListener("keydown", handleNavKey);
-    // Focus stays on the trigger (not the search box) so Home/End land on
-    // the list immediately — e.g. Home jumps straight to the top option,
-    // usually "(no X)", without first needing to tab out of the text field.
-    entry.trigger.focus();
   }
 
   // Shared by the trigger (default focus holder while a popup is open) and
@@ -259,9 +283,19 @@
   document.addEventListener("mousedown", function (e) {
     if (openState && !openState.pop.contains(e.target) && !findEntry(openState.sel).trigger.contains(e.target)) closePopup();
   });
-  // fixed-position popup would drift on scroll; just close it
+  // fixed-position popup would drift away from its trigger on scroll; close it
+  // — but only once the trigger has actually moved out from under it. Scrolls
+  // that leave it in place (an inner container, or the browser reacting to the
+  // focus() in openPopup) leave the popup correctly anchored, so they are not
+  // grounds for closing.
   window.addEventListener("scroll", function (e) {
-    if (openState && !openState.pop.contains(e.target)) closePopup();
+    if (!openState || openState.pop.contains(e.target)) return;
+    var entry = findEntry(openState.sel);
+    if (entry) {
+      var c = entry.trigger.getBoundingClientRect();
+      if (Math.abs(c.top - openState.anchor.top) < 1 && Math.abs(c.left - openState.anchor.left) < 1) return;
+    }
+    closePopup();
   }, true);
   window.addEventListener("resize", closePopup);
 
