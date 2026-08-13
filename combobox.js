@@ -86,6 +86,58 @@
     openState.items = visible;
     openState.active = -1;
     if (visible.length) setActive(0);
+    // filtering changes the popup's height; an upward-opening one has to be
+    // re-anchored or it drifts away from the trigger as the list shrinks
+    positionPopup(false);
+  }
+
+  var GAP = 2;        // trigger-to-popup breathing room
+  var EDGE = 4;       // smallest allowed distance to a screen edge
+  var MIN_LIST = 80;  // never clamp the list below this, even in a tight spot
+
+  // The popup is placed in DOCUMENT coordinates (position:absolute on <body>),
+  // not viewport ones, so it travels with the page for free: ordinary
+  // scrolling, a phone keyboard shoving the page up, and iOS zooming into a
+  // focused field all move the trigger and the popup together instead of
+  // tearing them apart. body and html carry no filter/transform, so the
+  // containing block is the initial one at the document origin and page
+  // coordinates apply directly. No trigger sits in its own scroll container,
+  // so the page scroll is the only one that can move one.
+  //
+  // recheckFlip: re-decide whether to open below or above the trigger. Done on
+  // open and on resize (rotation, keyboard) but never while typing, so the
+  // popup does not jump sides under the user mid-search.
+  function positionPopup(recheckFlip) {
+    if (!openState) return;
+    var entry = findEntry(openState.sel);
+    if (!entry) return;
+    var pop = openState.pop, list = openState.list;
+    var r = entry.trigger.getBoundingClientRect();
+    // clientWidth/clientHeight, not innerWidth/innerHeight: the latter count
+    // the scrollbars, which the viewport we have to fit inside does not.
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+    var below = vh - r.bottom - GAP - EDGE;
+    var above = r.top - GAP - EDGE;
+
+    list.style.maxHeight = "";            // measure at natural size
+    var popH = pop.offsetHeight;
+    // Open below unless it doesn't fit there and the other side has more room.
+    if (recheckFlip) openState.flip = popH > below && above > below;
+    var room = openState.flip ? above : below;
+    // Too tall for the side it is on? Clamp the list rather than let options
+    // run off the screen edge. On a phone — especially with the on-screen
+    // keyboard up — there may only be a couple of hundred pixels to work with,
+    // and anything past the edge is unreachable while the popup is open.
+    if (popH > room) {
+      list.style.maxHeight = Math.max(MIN_LIST, room - (popH - list.offsetHeight)) + "px";
+      popH = pop.offsetHeight;
+    }
+
+    var left = Math.max(EDGE, Math.min(r.left, vw - pop.offsetWidth - EDGE));
+    var top = openState.flip ? r.top - popH - GAP : r.bottom + GAP;
+    pop.style.left = left + window.pageXOffset + "px";
+    pop.style.top = top + window.pageYOffset + "px";
   }
 
   function openPopup(entry) {
@@ -142,31 +194,10 @@
     // doing it first means that on a browser that ignores the option, the
     // scroll at least settles before anything is measured.
     entry.trigger.focus({ preventScroll: true });
-    var r = entry.trigger.getBoundingClientRect();
-    pop.style.position = "fixed";
-    pop.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 340)) + "px";
-    pop.style.top = r.bottom + 2 + "px";
-    var popH = pop.offsetHeight;
-    // clientHeight, not innerHeight: a fixed element's containing block is the
-    // layout viewport, which excludes the horizontal scrollbar that
-    // innerHeight counts — using the latter drops the popup ~15px too low.
-    var vh = document.documentElement.clientHeight;
-    // Popups that don't fit below flip above the trigger, and are anchored by
-    // their BOTTOM edge rather than a frozen `top`: filtering shrinks the list,
-    // and a fixed top would leave the box floating far above the combo it
-    // belongs to. Anchoring the bottom keeps it glued as the height changes.
-    if (r.bottom + 2 + popH > vh && r.top - popH - 2 > 0) {
-      pop.style.top = "auto";
-      pop.style.bottom = vh - r.top + 2 + "px";
-    }
+    pop.style.position = "absolute";
     entry.trigger.setAttribute("aria-expanded", "true");
-    // anchor: where the trigger sat when the coordinates above were computed.
-    // The scroll handler closes on movement away from it rather than on any
-    // scroll at all, so a scroll that leaves the trigger where it is — the one
-    // the act of opening can itself cause, dispatched asynchronously once
-    // openState already exists — cannot slam the popup shut as it appears.
-    openState = { sel: sel, pop: pop, input: input, list: list, all: all, items: all.slice(), active: -1,
-                  anchor: { top: r.top, left: r.left } };
+    openState = { sel: sel, pop: pop, input: input, list: list, all: all, items: all.slice(), active: -1, flip: false };
+    positionPopup(true);
     // pre-highlight current selection
     for (var j = 0; j < all.length; j++) if (all[j].value === sel.value) { setActive(j); break; }
 
@@ -283,21 +314,30 @@
   document.addEventListener("mousedown", function (e) {
     if (openState && !openState.pop.contains(e.target) && !findEntry(openState.sel).trigger.contains(e.target)) closePopup();
   });
-  // fixed-position popup would drift away from its trigger on scroll; close it
-  // — but only once the trigger has actually moved out from under it. Scrolls
-  // that leave it in place (an inner container, or the browser reacting to the
-  // focus() in openPopup) leave the popup correctly anchored, so they are not
-  // grounds for closing.
+  // Scrolling no longer closes the popup. It is positioned in document
+  // coordinates, so it travels with its trigger rather than drifting off it;
+  // closing on scroll used to paper over that drift, and on a phone it made
+  // search unusable — the browser scrolls a focused field into view above the
+  // keyboard, which shut the popup the moment you tapped into it.
+  //
+  // The height clamp is still measured against the viewport though, so it goes
+  // stale as a scroll carries the popup toward a screen edge. Recompute it,
+  // one layout pass per frame, ignoring scrolls inside the popup's own list.
+  // The flip is deliberately not rechecked: the popup must not change sides
+  // while the user is scrolling.
+  var reflowQueued = false;
   window.addEventListener("scroll", function (e) {
-    if (!openState || openState.pop.contains(e.target)) return;
-    var entry = findEntry(openState.sel);
-    if (entry) {
-      var c = entry.trigger.getBoundingClientRect();
-      if (Math.abs(c.top - openState.anchor.top) < 1 && Math.abs(c.left - openState.anchor.left) < 1) return;
-    }
-    closePopup();
+    if (!openState || reflowQueued || openState.pop.contains(e.target)) return;
+    reflowQueued = true;
+    requestAnimationFrame(function () { reflowQueued = false; positionPopup(false); });
   }, true);
-  window.addEventListener("resize", closePopup);
+  //
+  // Resize repositions instead of closing, for the same reason: on Android the
+  // on-screen keyboard opening IS a resize, so closing there meant the popup
+  // vanished before a single character could be typed. Rechecking the flip
+  // also lets the popup move to whichever side of the trigger still has room
+  // once the keyboard has eaten half the screen.
+  window.addEventListener("resize", function () { positionPopup(true); });
 
   // Engine code paths that set select.value directly (LoadLocal, URL import,
   // restriction resets) do not fire change events; keep labels in sync.

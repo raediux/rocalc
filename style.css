@@ -686,6 +686,23 @@ select.cbx-hosted {
   letter-spacing: 0.8px;
   opacity: 0.6;
 }
+/* Touch input only — the desktop layout is unchanged. Not a responsive
+   redesign, just enough to make the comboboxes usable with a finger.
+   16px on the filter is load-bearing rather than cosmetic: iOS Safari
+   auto-zooms the page when focusing an input below 16px, which shifts the
+   whole visual viewport out from under the popup as you tap into it. */
+@media (pointer: coarse) {
+  .cbx-filter {
+    font-size: 16px;
+  }
+  .cbx-item {
+    padding: 8px;
+  }
+  .cbx-list {
+    max-height: 50vh;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 body.t-dark .cbx-trigger {
   background-color: #2a3340;
   color: #e2e8f0;
