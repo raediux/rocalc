@@ -1660,6 +1660,13 @@
       // Baldur difference. "delta" reads as the whole item because vanilla has
       // no counterpart to diff against.
       { name: "Small Devil Horns", full: "DEF +2", delta: "new item -- does not exist in vanilla" },
+      // First WEAPON divergence -- every row above is armor/headgear, where
+      // the changed number is an effect token or the row's def field. Here it
+      // is the row's atk field (m_Item[853][3]), which the engine reads
+      // directly for the equipped weapon, so like Small Devil Horns there is
+      // nothing for card-enchant-sync to layer on at runtime and this entry
+      // is display-only.
+      { name: "Double Bound", full: "ATK 85 - 1% chance to autocast [Double Strafe] Lv1 on ATK attacks (Lv10 if mastered)", delta: "ATK 70 -> 85" },
     ]},
   ];
 

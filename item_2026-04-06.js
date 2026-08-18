@@ -853,7 +853,7 @@ m_Item = [
 ,[850,50,1,3,0,1,25,50,"Hunter's Cap",0,"",6,1,32,10,37,5,0]
 ,[851,50,0,2,0,0,70,10,"Bf Recruiter Cap",0,"",0]
 ,[852,50,0,2,0,0,70,10,"Gf Recruiter Cap",0,"",0]
-,[853,10,124,70,3,3,90,70,"Double Bound",0,"When performing an ATK based attack, 1% chance to cast [Double Strafe] Lvl 1 on your target.<br>If the user has mastered [Double Strafe], it will cast [Double Strafe] Lvl 10",0]
+,[853,10,124,85,3,3,90,70,"Double Bound",0,"When performing an ATK based attack, 1% chance to cast [Double Strafe] Lvl 1 on your target.<br>If the user has mastered [Double Strafe], it will cast [Double Strafe] Lvl 10",0]
 ,[854,100,0,0,0,0,0,0,0,0,"",80,3,89,3,0]
 ,[855,100,0,0,0,0,0,0,"Tournament Shield System Set",0,"<b>[Lord Knight]</b><BR>ASPD -5%",18,2,80,4,0]
 ,[856,100,0,0,0,0,0,0,0,0,0,5104,20,221,50,0]
