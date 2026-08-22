@@ -1872,6 +1872,9 @@ m_Item = [
 ,[1867,64,0,1,0,1,10,1,"Aumdura's Benefit (B)",0,"Receive +5% experience from killing any monster.",77,-5,79,-5,0]
 ,[1868,64,0,1,0,1,10,1,"Aumdura's Benefit (A)",0,"",7,1,19,1,0]
 ,[1869,51,1,2,0,0,10,1,"Small Devil Horns",0,"",0]	//Project Baldur custom item, not in vanilla (server item ID 18503). Middle headgear, DEF 2, weight 10, no slot, no level requirement, job 1 = all except Novice (same code Muffler/Shoes/Safety Ring use). Appended rather than inserted -- m_Item is positional, so every existing index, w_SE set id and saved build URL has to keep pointing at the same row.
+,[1870,50,0,0,0,0,10,1,"Persika",0,"",9,1,14,20,0]	//Project Baldur custom item (server item ID 5781). Upper headgear, DEF 0, weight 10, no slot, level requirement 1, job 0 = every job including Novice. Flee +1, MaxSP +20. Unrefineable in-game, but the calc has no per-item refine flag (A_HEAD_REFINE is a free dropdown) and none of Persika's bonuses are refine-scaled, so there is nothing to express. Its two combos are the pseudo-items below.
+,[1871,100,0,0,0,0,0,0,"Persika + Romantic Flower",0,"",4,1,14,30,0]
+,[1872,100,0,0,0,0,0,0,"Persika + Romantic Leaf",0,"",6,1,9,2,0]
 ];
 
 //[ id, display location, job that can use, atk/def, level of weapon, slots, weight, level required to use, "name of item", ?, "description", effect1, effect2, ..., 0 =? ]
@@ -2407,6 +2410,8 @@ w_SE = [[737,436,475,"NULL"]
 ,[1861,889,1860,"NULL"]
 ,[1864,987,998,1863,"NULL"]
 ,[1866,442,1865,"NULL"]
+,[1871,1870,274,"NULL"]
+,[1872,1870,276,"NULL"]
 ];
 SE_MAXnum = w_SE.length -1;
 for(var i=0;i<=SE_MAXnum;i++){

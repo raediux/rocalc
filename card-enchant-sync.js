@@ -1667,6 +1667,14 @@
       // nothing for card-enchant-sync to layer on at runtime and this entry
       // is display-only.
       { name: "Double Bound", full: "ATK 85 - 1% chance to autocast [Double Strafe] Lv1 on ATK attacks (Lv10 if mastered)", delta: "ATK 70 -> 85" },
+      // Second ADDED item (after Small Devil Horns), and the first added one
+      // that brings set combos with it: m_Item 1870 is the headgear itself,
+      // 1871/1872 are the location-100 pseudo-items the w_SE table activates
+      // when Romantic Flower (274) or Romantic Leaf (276) fills the lower
+      // slot. All of its bonuses are plain effect tokens on those three rows,
+      // so as with the rows above there is nothing to layer on at runtime and
+      // this entry is display-only.
+      { name: "Persika", full: "Flee +1, MaxSP +20 - [+Romantic Flower] INT +1, MaxSP +30 - [+Romantic Leaf] LUK +1, Flee +2", delta: "new item -- does not exist in vanilla" },
     ]},
   ];
 
