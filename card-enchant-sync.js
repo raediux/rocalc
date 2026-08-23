@@ -196,7 +196,11 @@
     "Zhu Po Long": { n_A_CRI: 1 }, // Crit Rate 3->4
     // code9=FLEE confirmed live via this card.
     "Choco": { n_A_FLEE: 5 }, // FLEE 10->15 (banana juice/provoke not automatable)
-    "Tamruan": { n_A_DEF: 1 }, // DEF 2->3 (shield charge skill dmg not automatable)
+    "Tamruan": { n_A_DEF: 1 }, // DEF 2->3. Its skill-damage half (10%->25%)
+    // lives in CODE_DELTAS below, not here -- an earlier comment on this line
+    // claimed skill dmg was "not automatable", which was wrong: it rides the
+    // 5000+skillID generic code family through the patched StPlusCard, same as
+    // every other CODE_DELTAS entry.
     "Toad": { n_A_LUCKY: 2 }, // Perfect Dodge 1->3
     // Neutral-element resist half (5%->10%) resolved 2026-07-06 via
     // CODE_DELTAS below (code60 = Neutral resist, bypasses the UI same as
@@ -413,6 +417,27 @@
     // matches the changelog's baseline exactly; its %MaxSP+15% (code16) is
     // untouched. Added 2026-07-28 ("Increased SP Recovery from 3% to 7%").
     "Sohee": [{ code: 76, delta: 4, label: "+4% SP Recovery Rate (3%->7%)" }],
+    // Tamruan (shield) — the changelog's "10%->25% more dmg with Shield
+    // Charge/Boomerang", applied 2026-08-23. Skill-specific damage % is the
+    // 5000+skillID generic code family, read at damage time in head.js as
+    // `StPlusCalc2(5e3+n_A_ActiveSkill)+StPlusCard(5e3+n_A_ActiveSkill)`, so it
+    // reaches the patched StPlusCard exactly like every other entry here — the
+    // old "not automatable" note on its STAT_DELTAS line above was simply
+    // wrong. Skill IDs from m_Skill: 158 Shield Charge ("Smite"), 159 Shield
+    // Boomerang, 384 Shield Boomerang (Soul Linked); the card's own vanilla row
+    // carries all three at 10, so all three get the same +15 top-up and the SL
+    // variant stays in step with the normal one.
+    // This STACKS with the Tamruan + Noxious combo (COMBO_DELTAS, another +15
+    // on the same three codes) — both feed the same codeDeltaTotals bucket, so
+    // Tamruan alone reads 25% and the pair reads 40%, matching the changelog's
+    // "an additional 15%" wording. Live-verified on a Paladin vs Poring --
+    // Shield Charge 433 -> 541 (x1.25) -> 606 (x1.40), Shield Boomerang 977 ->
+    // 1221 -> 1367, and DEF 5+5 -> 8+5 confirming the DEF 2->3 half too.
+    "Tamruan": [
+      { code: 5158, delta: 15, label: "+15% Shield Charge dmg (10%->25%)" },
+      { code: 5159, delta: 15, label: "+15% Shield Boomerang dmg (10%->25%)" },
+      { code: 5384, delta: 15, label: "+15% Shield Boomerang (Soul Linked) dmg (10%->25%)" },
+    ],
     // Solider [317,4,"Solider",0,18,2,19,2,0] (body slot, confirmed live —
     // only offered in A_body_card) — vanilla DEF+2 (code18) and MDEF+2
     // (code19). Changelog 2026-07-28: "Changed 2 DEF to 10% DEF Rate,
@@ -1285,6 +1310,31 @@
       apply: function () { return {}; }, // full effect is baked into the engine edit itself
       label: "+3% ASPD (combo: Steel Chonchon + Chonchon, new)",
     },
+    // Tamruan + Noxious (2026-08-23): "Increases Shield Boomerang and Shield
+    // Charge an additional 15%". Unlike every combo above, this one needs no
+    // engine edit and no global patch — skill-specific damage % is a real
+    // generic dispatch code (the 5000+skillID family), read at damage time as
+    // `StPlusCalc2(5e3+n_A_ActiveSkill)+StPlusCard(5e3+n_A_ActiveSkill)` in
+    // head.js, so a `codes` entry on the combo rides the SAME patched
+    // StPlusCard path CODE_DELTAS already uses. Skill IDs from m_Skill:
+    // 158 Shield Charge ("Smite"), 159 Shield Boomerang, 384 Shield Boomerang
+    // (Soul Linked) — Tamruan's own vanilla row carries all three at 10, so
+    // the combo tops up all three to stay consistent with the SL variant.
+    // Slots don't conflict: Tamruan is a shield card, Noxious a garment card.
+    // This is the combo's +15 ONLY — it STACKS on top of Tamruan's own
+    // 10%->25% CODE_DELTAS entry (same three codes, same codeDeltaTotals
+    // bucket), so the pair totals 40%, matching the changelog's wording of
+    // "an additional 15%" rather than a replacement.
+    {
+      pair: ["Tamruan", "Noxious"],
+      apply: function () { return {}; }, // no globals — the whole effect is the `codes` below
+      codes: [
+        { code: 5158, delta: 15, label: "+15% Shield Charge dmg" },
+        { code: 5159, delta: 15, label: "+15% Shield Boomerang dmg" },
+        { code: 5384, delta: 15, label: "+15% Shield Boomerang (Soul Linked) dmg" },
+      ],
+      label: "+15% Shield Boomerang / Shield Charge dmg (combo: Tamruan + Noxious, new)",
+    },
   ]);
 
   // n_tokNN pseudo-keys address window.n_tok[NN] (an array element) rather
@@ -1576,7 +1626,7 @@
       { name: "Munak", full: "DEF +3 (Earth and Stone Curse resist removed; +30% resist vs some Payon mobs)", delta: "+2 DEF (1 -> 3); Earth and Stone Curse resist removed" },
       { name: "Parasite", full: "DEF +2, Neutral resist +10%", delta: "+1 DEF (1 -> 2), +5% Neutral (5% -> 10%)" },
       { name: "Sting", full: "All stats +1 · [Refine +7] +1 more (total +2)", delta: "Reworked (was DEF+2, MDEF+5 at refine ≥9)" },
-      { name: "Tamruan", full: "DEF +3 (10%->25% more dmg with Shield Charge/Boomerang)", delta: "+1 DEF (2 -> 3)" },
+      { name: "Tamruan", full: "DEF +3, Shield Charge/Boomerang dmg +25% · [+ Noxious] +15% more (40% total)", delta: "+1 DEF (2 -> 3), +15% Shield Charge/Boomerang dmg (10% -> 25%); combo +15% more (new, w/ Noxious)" },
     ]},
     { slot: "Garment / shoulder", cards: [
       { name: "Baphomet Jr.", full: "AGI +3, Crit Rate +1, FLEE +5", delta: "+5 FLEE (new)" },
@@ -1586,7 +1636,7 @@
       { name: "Eclipse", full: "VIT +2 · [+ Lunatic] FLEE +20", delta: "+1 VIT (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Mastering", full: "LUK +2 · [+ Poring] FLEE +20", delta: "+1 LUK (1 -> 2); combo +2 FLEE (18 -> 20)" },
       { name: "Ninetails", full: "AGI +2 · [Refine +7] FLEE +18", delta: "Refine +9->+7, FLEE 20->18 (AGI+2 keeps total at 20)" },
-      { name: "Noxious", full: "Neutral resist +10%, Long-range dmg resist +15%", delta: "+5% (10% -> 15%)" },
+      { name: "Noxious", full: "Neutral resist +10%, Long-range dmg resist +15% · [+ Tamruan] Shield Charge/Boomerang dmg +15% more (40% total)", delta: "+5% (10% -> 15%); combo +15% Shield Charge/Boomerang dmg (new, w/ Tamruan)" },
       { name: "Orc Baby", full: "FLEE +10, Neutral resist +10% · [Refine +7] both +2 more", delta: "Refine +9 -> +7, bonus +5 -> +2 (both FLEE and Neutral)" },
       { name: "Roween", full: "FLEE +5, Perfect Dodge +3, ATK dmg vs Water +15%", delta: "+5% (10% -> 15%)" },
       { name: "Toad", full: "Perfect Dodge +3 · [+ Roda Frog] FLEE +20", delta: "+2 Perfect Dodge (1 -> 3); combo +2 FLEE (18 -> 20)" },
@@ -1675,6 +1725,17 @@
       // so as with the rows above there is nothing to layer on at runtime and
       // this entry is display-only.
       { name: "Persika", full: "Flee +1, MaxSP +20 - [+Romantic Flower] INT +1, MaxSP +30 - [+Romantic Leaf] LUK +1, Flee +2", delta: "new item -- does not exist in vanilla" },
+      // Weight-only changes (2026-08-23) -- the first divergences that touch
+      // neither an effect token nor the def/atk field but the row's weight
+      // field (m_Item[...][6]), which the engine reads directly for the
+      // Weight % readout and the overweight (>=50%) regen cutoff. Nothing to
+      // layer on at runtime; display-only, same as the rows above.
+      // "Herald of God" in Ray's changelog is this calc's "Sacred Mission"
+      // row (m_Item 433) -- same kRO shield, iRO name; matched on job group
+      // 113 (Crusader/Paladin), DEF 5, req. level 83 and the exact 160 weight.
+      { name: "Shield", full: "Weight 180", delta: "Weight 130 -> 180" },
+      { name: "Mirror Shield", full: "Weight 150", delta: "Weight 100 -> 150" },
+      { name: "Sacred Mission (Herald of God)", full: "Weight 200", delta: "Weight 160 -> 200" },
     ]},
   ];
 
@@ -1833,6 +1894,18 @@
       perCard[names[i2]].codes = entries;
       for (var e = 0; e < entries.length; e++) {
         newCodeTotals[entries[e].code] = (newCodeTotals[entries[e].code] || 0) + entries[e].delta;
+      }
+    }
+    // Combo-gated code deltas (Tamruan + Noxious's skill-damage %). Same
+    // codeDeltaTotals bucket as the per-card CODE_DELTAS above, just gated on
+    // BOTH halves of the pair being equipped instead of a single card name.
+    for (var cc = 0; cc < COMBO_DELTAS.length; cc++) {
+      var comboRule = COMBO_DELTAS[cc];
+      if (!comboRule.codes) continue;
+      if (names.indexOf(comboRule.pair[0]) < 0 || names.indexOf(comboRule.pair[1]) < 0) continue;
+      for (var ce = 0; ce < comboRule.codes.length; ce++) {
+        var cEntry = comboRule.codes[ce];
+        newCodeTotals[cEntry.code] = (newCodeTotals[cEntry.code] || 0) + cEntry.delta;
       }
     }
     codeDeltaTotals = newCodeTotals;
