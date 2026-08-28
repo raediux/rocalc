@@ -137,7 +137,16 @@
     '.bst-tag.one{background:rgba(90,150,90,.22);color:#a6d6a6}' +
     '.bst-tag.emp{background:rgba(170,96,28,.3);color:#ffc98a}' +
     '#bst-empty{padding:34px;text-align:center;color:#8b96a4}' +
-    '#bst-open{margin-left:10px}';
+    // The one control that opens a whole other view, sitting in a row of plain
+    // dark buttons -- filled with the calc's accent so it reads as the primary
+    // action there. themes() only repaints selects and panels, never inputs, so
+    // this is not overwritten on theme load.
+    '#bst-open{margin-left:12px;background:#e8842c;color:#17202b;border:1px solid #f2983f;' +
+      'border-radius:6px;padding:5px 15px;font-weight:700;font-size:12px;letter-spacing:.02em;' +
+      'cursor:pointer;box-shadow:0 1px 7px rgba(232,132,44,.4)}' +
+    '#bst-open:hover{background:#f5983c;border-color:#ffb055;box-shadow:0 2px 11px rgba(232,132,44,.6)}' +
+    '#bst-open:active{box-shadow:0 1px 4px rgba(232,132,44,.4);transform:translateY(1px)}' +
+    '#bst-open:focus-visible{outline:2px solid #ffc98a;outline-offset:2px}';
 
   var style = document.createElement("style");
   style.id = "bst-css";
