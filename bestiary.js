@@ -50,19 +50,6 @@
   }
   DATA.sort(function (a, b) { return b.hp - a.hp; });
 
-  // Place membership comes from the engine's own tables, so the region list
-  // stays in step with the calc's Place dropdown.
-  var placeSets = {};
-  function inPlace(idx, id) {
-    if (!idx) return true;
-    if (!placeSets[idx]) {
-      var set = {}, list = (typeof m_MonsterMap !== "undefined" && m_MonsterMap[idx]) || [];
-      for (var k = 0; list[k] !== "N" && k < list.length; k++) set[list[k]] = 1;
-      placeSets[idx] = set;
-    }
-    return !!placeSets[idx][id];
-  }
-
   var CSS =
     // The stage spans only the area the panel is allowed to cover -- it starts
     // to the right of the fixed results sidebar, so the damage numbers stay
@@ -190,9 +177,9 @@
     '<div id="bst-ctl">' +
       '<div class="line">' +
         '<input type="search" id="bst-q" placeholder="Filter by name, race, element, or size&hellip;" aria-label="Filter monsters">' +
-        '<select id="bst-place" aria-label="Filter by place"></select>' +
         '<select id="bst-race" aria-label="Filter by race"><option value="">All races</option></select>' +
         '<select id="bst-elem" aria-label="Filter by element"><option value="">All elements</option></select>' +
+        '<select id="bst-size" aria-label="Filter by size"><option value="">All sizes</option></select>' +
       '</div>' +
       '<div class="line">' +
         rangeHTML("hp", "HP") + rangeHTML("def", "DEF") + rangeHTML("mdef", "MDEF") + rangeHTML("vit", "VIT") +
@@ -221,23 +208,21 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var bodyEl = $("bst-body"), emptyEl = $("bst-empty"), countEl = $("bst-count"), scrollEl = $("bst-scroll"),
-      q = $("bst-q"), placeSel = $("bst-place"), raceSel = $("bst-race"), elemSel = $("bst-elem");
+      q = $("bst-q"), raceSel = $("bst-race"), elemSel = $("bst-elem"), sizeSel = $("bst-size");
 
-  // Place options mirror the calc's own list (index 0 = All Regions).
-  if (typeof v_Place !== "undefined") {
-    for (var p = 0; p < v_Place.length; p++) placeSel.options[p] = new Option(v_Place[p], p);
-  } else {
-    placeSel.options[0] = new Option("All Regions", 0);
-  }
-
-  function fillSelect(sel, key) {
+  // order: null sorts alphabetically, which is right for race and element.
+  // Size gets the engine's own Small/Medium/Large order instead -- alphabetical
+  // would read Large, Medium, Small, which is not an order anyone thinks in.
+  function fillSelect(sel, key, order) {
     var seen = {}, vals = [];
     for (var k = 0; k < DATA.length; k++) if (!seen[DATA[k][key]]) { seen[DATA[k][key]] = 1; vals.push(DATA[k][key]); }
-    vals.sort();
+    if (order) vals.sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
+    else vals.sort();
     for (var v = 0; v < vals.length; v++) sel.appendChild(new Option(vals[v], vals[v]));
   }
   fillSelect(raceSel, "race");
   fillSelect(elemSel, "elem");
+  fillSelect(sizeSel, "size", v_Size);
 
   var RANGES = [["hp", "hp"], ["def", "def"], ["mdef", "mdef"], ["vit", "vit"]];
   var rangeEls = [];
@@ -264,7 +249,7 @@
 
   function render() {
     var term = q.value.trim().toLowerCase();
-    var place = 1 * placeSel.value, race = raceSel.value, elem = elemSel.value;
+    var race = raceSel.value, elem = elemSel.value, size = sizeSel.value;
     var lim = RANGES.map(function (r) {
       return [r[0], bound("bst-" + r[1] + "min", -Infinity), bound("bst-" + r[1] + "max", Infinity)];
     });
@@ -272,9 +257,9 @@
 
     var rows = DATA.filter(function (m) {
       for (var k = 0; k < lim.length; k++) if (m[lim[k][0]] < lim[k][1] || m[lim[k][0]] > lim[k][2]) return false;
-      if (place && !inPlace(place, m.id)) return false;
       if (race && m.race !== race) return false;
       if (elem && m.elem !== elem) return false;
+      if (size && m.size !== size) return false;
       if (filters.nonboss && m.f === 1) return false;
       if (filters.hasexp && !m.bx && !m.jx) return false;
       if (term && (m.name + " " + m.race + " " + m.elem + " " + m.size).toLowerCase().indexOf(term) === -1) return false;
@@ -380,9 +365,9 @@
 
   $("bst-reset").addEventListener("click", function () {
     q.value = "";
-    placeSel.value = "0";
     raceSel.value = "";
     elemSel.value = "";
+    sizeSel.value = "";
     rangeEls.forEach(function (el) { el.value = ""; });
     filters = {};
     DEFAULT_FILTERS.forEach(function (f) { filters[f] = 1; });
@@ -392,7 +377,7 @@
     render();
   });
 
-  [q, placeSel, raceSel, elemSel].concat(rangeEls).forEach(function (el) {
+  [q, raceSel, elemSel, sizeSel].concat(rangeEls).forEach(function (el) {
     el.addEventListener("input", render);
   });
 
