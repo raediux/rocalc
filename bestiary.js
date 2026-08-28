@@ -14,13 +14,18 @@
 
   var c = document.calcForm;
 
-  // Rows hidden from the table. The alternate-server and Renewal variants are
-  // duplicates of monsters already listed; Antonio (id 17) is a training dummy;
-  // id 548 is the speculative "Emperium [assuming it's bosstype]" duplicate of
-  // the real Emperium (id 44). Excluding by id where possible: m_Monster is
-  // positional, so an id can never shift, while a name can be edited.
+  // Rows hidden from the table. enemy-list-filter.js owns the rules and hides
+  // the same monsters from the Enemy dropdown, so reading its id set here keeps
+  // the two lists identical -- every row in this table is selectable, and the
+  // dropdown offers nothing the table is missing. The literals are the fallback
+  // for that file failing to load, and must stay in step with its rules.
+  var HIDDEN = window.RO_HIDDEN_MONSTERS;
   var EXCLUDE_IDS = { 17: 1, 548: 1 };
   var EXCLUDE_NAME = /\((aRO|Custom|Renewal)\)/;
+  function isHidden(row) {
+    if (HIDDEN) return !!HIDDEN[row[0]];
+    return !!EXCLUDE_IDS[row[0]] || EXCLUDE_NAME.test(row[1]);
+  }
 
   // Field positions in an m_Monster row, per the layout comment at the end of
   // monster_*.js. Monster STR is not stored.
@@ -29,7 +34,7 @@
   var DATA = [];
   for (var i = 0; i < m_Monster.length; i++) {
     var r = m_Monster[i];
-    if (!r || EXCLUDE_IDS[r[0]] || EXCLUDE_NAME.test(r[F.NAME])) continue;
+    if (!r || isHidden(r)) continue;
     DATA.push({
       id: r[0],
       name: r[F.NAME],
