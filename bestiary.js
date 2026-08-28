@@ -405,6 +405,8 @@
     stage.classList.add("open");
     panel.classList.add("open");
     panel.setAttribute("aria-hidden", "false");
+    openBtn.value = "Close Bestiary";
+    openBtn.setAttribute("aria-expanded", "true");
     render();
     markCurrent();
     q.focus();
@@ -414,6 +416,8 @@
     stage.classList.remove("open");
     panel.classList.remove("open");
     panel.setAttribute("aria-hidden", "true");
+    openBtn.value = "Open Bestiary";
+    openBtn.setAttribute("aria-expanded", "false");
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
@@ -435,7 +439,13 @@
   openBtn.type = "button";
   openBtn.id = "bst-open";
   openBtn.value = "Open Bestiary";
-  openBtn.addEventListener("click", open);
+  openBtn.setAttribute("aria-expanded", "false");
+  // The panel never covers the results column, so this button stays visible
+  // while it is open and doubles as the close control.
+  openBtn.addEventListener("click", function () {
+    if (panel.classList.contains("open")) close();
+    else open();
+  });
   // combobox.js hides the native select and inserts a .cbx wrapper right after
   // it, so anchoring to the select alone would put the button to the LEFT of
   // the visible control. Anchor to the wrapper when it exists.
