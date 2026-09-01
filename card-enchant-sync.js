@@ -485,20 +485,26 @@
       { code: 300, delta: 10, label: "DEF +2 replaced with DEF Rate +10%" },
       { code: 19, delta: 1, label: "+1 MDEF (2->3)" },
     ],
-    // Deviace (weapon card): vanilla already gives +7% ATK dmg vs Brute(32),
+    // Deviace (weapon card): vanilla gives +7% ATK dmg vs Brute(32),
     // Plant(33), Insect(34), Demi-Human(37) via its own card codes — matches
-    // [20,1,"Deviace",0,37,7,32,7,33,7,34,7,0] exactly. Changelog: "Changed
-    // from 7% to demi, plant, insect and brute to 7% to all races." The vs-
-    // race UI slot only supports one target at a time and has no "all races"
-    // option, so per Ray's instruction this fills in the remaining 6 races
-    // directly instead of fighting over a UI slot.
+    // [20,1,"Deviace",0,37,7,32,7,33,7,34,7,0] exactly. Server value is +10%
+    // vs ALL races (Ray, 2026-09-01), so the four vanilla races get +3 each
+    // (7 -> 10) and the remaining six get the full 10. The vs-race UI slot
+    // only supports one target at a time and has no "all races" option, so
+    // this fills every race in directly instead of fighting over a UI slot.
+    // All ten codes below apply their math; only the first carries a visible
+    // label, so the Adjustments panel reads as one line instead of ten.
     "Deviace": [
-      { code: 30, delta: 7, label: "+7% ATK dmg vs Formless" },
-      { code: 31, delta: 7, label: "+7% ATK dmg vs Undead" },
-      { code: 35, delta: 7, label: "+7% ATK dmg vs Fish" },
-      { code: 36, delta: 7, label: "+7% ATK dmg vs Demon" },
-      { code: 38, delta: 7, label: "+7% ATK dmg vs Angel" },
-      { code: 39, delta: 7, label: "+7% ATK dmg vs Dragon" },
+      { code: 30, delta: 10, label: "ATK dmg +10% vs all races" }, // Formless
+      { code: 31, delta: 10, hidden: true }, // Undead
+      { code: 32, delta: 3, hidden: true },  // Brute      (7 -> 10)
+      { code: 33, delta: 3, hidden: true },  // Plant      (7 -> 10)
+      { code: 34, delta: 3, hidden: true },  // Insect     (7 -> 10)
+      { code: 35, delta: 10, hidden: true }, // Fish
+      { code: 36, delta: 10, hidden: true }, // Demon
+      { code: 37, delta: 3, hidden: true },  // Demi-Human (7 -> 10)
+      { code: 38, delta: 10, hidden: true }, // Angel
+      { code: 39, delta: 10, hidden: true }, // Dragon
     ],
     // Permeter (shield): vanilla is Shadow(67)+15, Undead-element(69)+15
     // (confirmed via [347,2,"Permeter",0,67,15,69,15,0] — NOT Ghost as the
@@ -1567,7 +1573,7 @@
     ]},
     { slot: "Weapon", cards: [
       { name: "Cecil Damon", full: "ASPD +5%, HIT +3", delta: "+33 HIT (-30 -> 3)" },
-      { name: "Deviace", full: "ATK dmg +7% vs all races", delta: "Was Brute/Plant/Insect/Demi-Human only" },
+      { name: "Deviace", full: "ATK dmg +10% vs all races", delta: "Was +7% vs Brute/Plant/Insect/Demi-Human only" },
       { name: "Female Thief Bug", full: "AGI +2, FLEE +1", delta: "+1 AGI (1 -> 2)" },
       { name: "Fur Seal", full: "HIT +12, FLEE +4, [Acolyte only] CRIT +10 vs Undead/Demon", delta: "+2 HIT (10->12), +1 FLEE (3->4), +1 CRIT vs Undead/Demon (9->10, Acolyte only)" },
       { name: "Golem", full: "ATK +15", delta: "+10 ATK (5 -> 15)" },
