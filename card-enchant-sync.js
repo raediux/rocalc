@@ -417,6 +417,10 @@
     // matches the changelog's baseline exactly; its %MaxSP+15% (code16) is
     // untouched. Added 2026-07-28 ("Increased SP Recovery from 3% to 7%").
     "Sohee": [{ code: 76, delta: 4, label: "+4% SP Recovery Rate (3%->7%)" }],
+    // Eggyra: SP Recovery Rate 15% -> 20% (Ray, 2026-09-06). Same code-76
+    // dispatch as Sohee above; the engine reads it at `I += n_tok[76] +
+    // n_A_Buf9[46]` in the SP-regen block, so a plain delta is all it needs.
+    "Eggyra": [{ code: 76, delta: 5, label: "+5% SP Recovery Rate (15%->20%)" }],
     // Tamruan (shield) — the changelog's "10%->25% more dmg with Shield
     // Charge/Boomerang", applied 2026-08-23. Skill-specific damage % is the
     // 5000+skillID generic code family, read at damage time in head.js as
