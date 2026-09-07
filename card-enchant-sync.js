@@ -340,6 +340,11 @@
     // 2026-07-06: card.js data edits (not foot.js formula edits) — a slot
     // reassignment and two renames/reworks Ray approved as a card.js
     // exception, same basis as the foot.js engine edits above.
+    // 2026-09-07: both of these left m_CardSort stale the same way Deniro did
+    // (see below) -- Baby Garm/Hatii (305) was appended to the END of the
+    // accessory group instead of being filed under B, and Piere (112) stayed
+    // in "Andre Larva"'s old A-slot in both weapon groups. Re-filed
+    // alphabetically; safe, since the dropdowns save/load by card id.
     "Baby Garm/Hatii": ["Moved from weapon to accessory slot (changelog: \"Garm_Baby_Card\")"],
     "Piere": ["Renamed from \"Andre Larva\" (changelog: drops from Piere instead of Andre; stats unchanged)"],
     // 2026-09-07: Deniro moved out of the card.js-data group above. Its DEF
