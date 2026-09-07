@@ -342,7 +342,14 @@
     // exception, same basis as the foot.js engine edits above.
     "Baby Garm/Hatii": ["Moved from weapon to accessory slot (changelog: \"Garm_Baby_Card\")"],
     "Piere": ["Renamed from \"Andre Larva\" (changelog: drops from Piere instead of Andre; stats unchanged)"],
-    "Deniro": ["Renamed from \"Soldier Andre\"; -30% dmg from Plant replaced with flat +30 DEF (changelog's \"Ant Hell card changes\" section)"],
+    // 2026-09-07: Deniro moved out of the card.js-data group above. Its DEF
+    // is SOFT (VIT) DEF, which no effect code can express, so the card row is
+    // now description-only and foot.js adds 30 to the VIT-DEF pool (t and
+    // n_A_VITDEF[0..2]) when card 121 is equipped. The rename also left 121
+    // sitting in "Soldier Andre"'s old alphabetical slot in m_CardSort[3]
+    // (between Sky Petite and Sting); it is now re-filed under D. Safe to
+    // reorder: the dropdowns save/load by card id, never by option index.
+    "Deniro": ["+30 Soft DEF"],
   };
 
   // Race/element/size bonuses bypass the Additional Enchants UI entirely
@@ -1628,7 +1635,7 @@
       { name: "Andre Egg", full: "MaxHP +10%", delta: "+5% (new)" },
       { name: "Argos", full: "DEF +3, Stone Curse resist +30%", delta: "+2 DEF (1 -> 3), +10% Stone Curse resist (20% -> 30%)" },
       { name: "Arclouze", full: "[Refine ≤4] MDEF +12", delta: "Removed base DEF+2; MDEF 3 (≤5) -> 12 (≤4)" },
-      { name: "Deniro", full: "DEF +30 (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat DEF +30 added" },
+      { name: "Deniro", full: "+30 Soft DEF (renamed from Soldier Andre)", delta: "Plant resist +30 removed, flat +30 soft (VIT) DEF added" },
       { name: "Despero of Thanatos", full: "INT -4 base, +1 INT per refine level", delta: "Base INT -6 -> -4" },
       { name: "Flame Skull", full: "+50% resist vs Stun, Curse, Blind, Stone Curse (also 5% chance each to inflict these on your attacker when hit)", delta: "+20% each (30% -> 50%)" },
       { name: "Hodremlin", full: "+20% resist vs Small/Large, +15% vs Medium (also 0.3% chance for temporary +30 Perfect Dodge for 10s)", delta: "+5% Small, +5% Large (Medium unchanged)" },
