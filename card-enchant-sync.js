@@ -1758,6 +1758,13 @@
       { name: "Shield", full: "Weight 180", delta: "Weight 130 -> 180" },
       { name: "Mirror Shield", full: "Weight 150", delta: "Weight 100 -> 150" },
       { name: "Sacred Mission (Herald of God)", full: "Weight 200", delta: "Weight 160 -> 200" },
+      // Second WEAPON divergence (after Double Bound, above) and the first
+      // that changes both the row's atk field AND its effect tokens: ATK is
+      // m_Item[98][3], while the added INT and the ASPD penalty are plain
+      // (code,value) pairs (4,1 and 12,-5) appended to the same row, which
+      // StPlusCalc2 picks up natively. So, like every entry above, nothing is
+      // layered on at runtime and this row is display-only.
+      { name: "Arbalest", full: "ATK 110 - DEX +2, INT +1, ASPD -5%", delta: "ATK 90 -> 110; INT +1 and ASPD -5% added" },
     ]},
   ];
 
