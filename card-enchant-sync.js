@@ -1765,6 +1765,9 @@
       // StPlusCalc2 picks up natively. So, like every entry above, nothing is
       // layered on at runtime and this row is display-only.
       { name: "Arbalest", full: "ATK 110 - DEX +2, INT +1, ASPD -5%", delta: "ATK 90 -> 110; INT +1 and ASPD -5% added" },
+      // Atk-field-only change, same shape as Double Bound: m_Item[487][3].
+      // Effect tokens untouched; display-only.
+      { name: "Garm Claw", full: "ATK 155 (other bonuses unchanged)", delta: "ATK 152 -> 155" },
     ]},
   ];
 

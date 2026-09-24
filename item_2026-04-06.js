@@ -487,7 +487,7 @@ m_Item = [
 ,[484,12,0,100,3,2,110,60,"Sage's Diary",0,"[Base STR >= 50] ASPD +5%<br>[Base INT >= 70] MATK +5%",89,15,0]
 ,[485,12,0,140,4,1,150,55,"Hardcover Book",0,"",1,3,5,2,0]
 ,[486,12,0,130,4,0,70,70,"Legacy of Dragon",0,"Recover 10 SP when killing a ["+v_Race[9]+"] race monster with ATK based damage.",189,1,4,3,0]
-,[487,13,0,152,4,1,55,70,"Garm Claw",0,"",20,7,15,-2,138,2,0]
+,[487,13,0,155,4,1,55,70,"Garm Claw",0,"",20,7,15,-2,138,2,0]
 ,[488,14,0,110,3,0,90,27,"Burning Passion Guitar",0,"",20,3,0]
 ,[489,14,0,110,3,0,90,27,"Loner's Guitar",0,"",20,1,0]
 ,[490,14,0,110,3,0,90,27,"Gentle Breeze Guitar",0,"",20,4,0]
