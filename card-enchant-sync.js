@@ -207,6 +207,7 @@
     // the rest of Bucket B) — only the DEF part lives here.
     "Parasite": { n_A_DEF: 1 }, // DEF 1->2
     "Waste Stove": { n_A_ATK: 5 }, // ATK 5->10
+    "Obeaune": { n_A_INT: 1 }, // INT +1 added (Cure Lv1 unchanged)
     "Mineral": { n_A_ATK: 20, n_A_DEF: 4 }, // ATK -25->-5, DEF 3->7
     // WoE:SE "Biolab" card set — changelog uses shorthand names (Harword,
     // Shecil) that don't exist in this data; the actual rows are named
@@ -1686,6 +1687,7 @@
     { slot: "Accessory", cards: [
       { name: "Baby Garm/Hatii", full: "(moved from weapon to accessory slot)", delta: "Slot reassignment only" },
       { name: "Galion", full: "HIT +5, ATK dmg vs Water +10%", delta: "+5% (5% -> 10%)" },
+      { name: "Obeaune", full: "INT +1 (enables Cure Lv1)", delta: "+1 INT (new)" },
       { name: "Joker", full: "All race resist -20% (grants Gank skill, 7% auto-steal)", delta: "-20% each (new debuff, vs all 10 races)" },
       { name: "Ragged Zombie", full: "+5% ATK/MATK dmg vs Demi-Human (0.1%->2% Bleeding-on-hit chance)", delta: "+4% each (1% -> 5%)" },
       { name: "Shinobi", full: "AGI +1, Perfect Dodge +1 (cloak/Shuriken proc-on-hit)", delta: "+1 (new)" },
