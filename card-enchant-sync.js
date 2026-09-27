@@ -1768,6 +1768,9 @@
       // Atk-field-only change, same shape as Double Bound: m_Item[487][3].
       // Effect tokens untouched; display-only.
       { name: "Garm Claw", full: "ATK 155 (other bonuses unchanged)", delta: "ATK 152 -> 155" },
+      // Effect-token-only change: m_Item[87]'s code-89 (MATK %) value 15 -> 20.
+      // Display-only, like the rest of this group.
+      { name: "Staff", full: "INT +2, MATK +20%", delta: "MATK +15% -> +20%" },
     ]},
   ];
 
