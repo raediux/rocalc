@@ -1766,6 +1766,11 @@
       // so as with the rows above there is nothing to layer on at runtime and
       // this entry is display-only.
       { name: "Persika", full: "Flee +1, MaxSP +20 - [+Romantic Flower] INT +1, MaxSP +30 - [+Romantic Leaf] LUK +1, Flee +2", delta: "new item -- does not exist in vanilla" },
+      // First ADDED set with no new equipment (2026-10-05): m_Item 1873 is
+      // the location-100 pseudo-item, activated by two w_SE rows (Buckler 308
+      // or Guard 306, plus Shoes 321 and Muffler 314). Plain effect tokens,
+      // display-only like the rows above.
+      { name: "The First Men", full: "(Buckler or Guard) + Shoes + Muffler: natural HP/SP recovery +15%, resistance to all statuses +5%", delta: "new set -- does not exist in vanilla" },
       // Weight-only changes (2026-08-23) -- the first divergences that touch
       // neither an effect token nor the def/atk field but the row's weight
       // field (m_Item[...][6]), which the engine reads directly for the

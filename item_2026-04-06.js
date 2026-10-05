@@ -1875,6 +1875,7 @@ m_Item = [
 ,[1870,50,0,0,0,1,10,1,"Persika",0,"",9,1,14,20,0]	//Project Baldur custom item (server item ID 5781). Upper headgear, DEF 0, weight 10, one card slot, level requirement 1, job 0 = every job including Novice. Flee +1, MaxSP +20. Unrefineable in-game, but the calc has no per-item refine flag (A_HEAD_REFINE is a free dropdown) and none of Persika's bonuses are refine-scaled, so there is nothing to express. Its two combos are the pseudo-items below.
 ,[1871,100,0,0,0,0,0,0,"Persika + Romantic Flower",0,"",4,1,14,30,0]
 ,[1872,100,0,0,0,0,0,0,"Persika + Romantic Leaf",0,"",6,1,9,2,0]
+,[1873,100,0,0,0,0,0,0,"The First Men",0,"",75,15,76,15,150,5,151,5,152,5,153,5,154,5,155,5,156,5,157,5,158,5,159,5,0]	//Project Baldur set: (Buckler[1] or Guard[1]) + Shoes[1] + Muffler[1]. Natural HP/SP recovery +15% (codes 75/76), resistance to all statuses +5% (codes 150-159, the same range the engine's own all-status buff n_A_Buf7[42] writes). Two w_SE rows share this one pseudo-item -- vanilla's own "or" pattern (see Glorious Ring 1115); the tooltip joins them with "or".
 ];
 
 //[ id, display location, job that can use, atk/def, level of weapon, slots, weight, level required to use, "name of item", ?, "description", effect1, effect2, ..., 0 =? ]
@@ -2412,6 +2413,8 @@ w_SE = [[737,436,475,"NULL"]
 ,[1866,442,1865,"NULL"]
 ,[1871,1870,274,"NULL"]
 ,[1872,1870,276,"NULL"]
+,[1873,308,321,314,"NULL"]
+,[1873,306,321,314,"NULL"]
 ];
 SE_MAXnum = w_SE.length -1;
 for(var i=0;i<=SE_MAXnum;i++){
