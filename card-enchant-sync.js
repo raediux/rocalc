@@ -1375,6 +1375,23 @@
       ],
       label: "+15% Shield Boomerang / Shield Charge dmg (combo: Tamruan + Noxious, new)",
     },
+    // Incubus + Succubus (2026-10-05): server set is INT +6, VIT +6, HP/SP
+    // natural recovery +50%. Vanilla ALREADY has this set — card-set pseudo-row
+    // m_Card 433 (`[433,100,0,0,4,4,3,4,75,30,76,30,0]`, w_SC `[433,291,234]`)
+    // gives INT +4, VIT +4, regen +30% — so these are deltas on top of it
+    // (+2/+2/+20/+20), same convention as the FLEE combos above. Stats go
+    // through STAT_CODE injection (codes 4/3); regen through codes 75/76, read
+    // as `I += n_tok[75] + ...` / `I += n_tok[76] + ...` in the regen
+    // multiplier. Stacks on each card's own -20%, so each regen nets +30%.
+    {
+      pair: ["Incubus", "Succubus"],
+      apply: function () { return { n_A_INT: 2, n_A_VIT: 2 }; },
+      codes: [
+        { code: 75, delta: 20, label: "+20% HP Recovery" },
+        { code: 76, delta: 20, label: "+20% SP Recovery" },
+      ],
+      label: "INT +2, VIT +2, HP/SP Recovery +20% (combo: Incubus + Succubus, 4->6 / 30%->50%)",
+    },
   ]);
 
   // n_tokNN pseudo-keys address window.n_tok[NN] (an array element) rather
