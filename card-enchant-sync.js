@@ -111,12 +111,12 @@
   // on): n_A_DEF/n_A_MDEF (`n_A_DEF = n_tok[18]+n_A_Buf9[34]`, etc.),
   // n_A_HIT (`n_A_HIT += n_tok[8]+n_A_Buf9[36]`), n_A_FLEE, n_A_LUCKY
   // (confirmed this is Perfect Dodge's real variable name — `n_A_LUCKY +=
-  // n_tok[11]+n_A_Buf9[38]`), n_A_ATK
-  // (`n_A_ATK += I` before a LATER unrelated %-scaling step — patching
-  // post-hoc still lands correctly since our delta rides along with
-  // whatever %-scaling applies to everyone else's flat ATK), n_A_STR/AGI/
+  // n_tok[11]+n_A_Buf9[38]`), n_A_STR/AGI/
   // VIT/INT/DEX/LUK, n_A_MaxHP/MaxSP (their ADDITIVE phase specifically,
   // confirmed distinct from the %-based phase — see below).
+  // n_A_ATK was listed here too and that was WRONG — corrected 2026-10-05;
+  // ATK is printed inside StAllCalc and %-scaled there, so it routes through
+  // STAT_CODE/code 17. See the STAT_CODE comment.
   // n_A_CRI was listed here too and that was WRONG — corrected 2026-08-13; it
   // is finished off and printed inside StAllCalc, so it now routes through
   // STAT_CODE/code 10 like DEF/MDEF and MaxHP/MaxSP. See the STAT_CODE comment.
@@ -208,6 +208,10 @@
     "Parasite": { n_A_DEF: 1 }, // DEF 1->2
     "Waste Stove": { n_A_ATK: 5 }, // ATK 5->10
     "Obeaune": { n_A_INT: 1 }, // INT +1 added (Cure Lv1 unchanged)
+    // Mineral's net -5 ATK needed an engine edit (2026-10-05): foot.js zeroed
+    // the whole negative gear-ATK sum (`I<0&&SRV>0&&(I=0)`), so -5 showed as
+    // 0. Now `n_A_ATK+I<0&&SRV>0&&(I=-n_A_ATK)`: gear ATK may go negative,
+    // only total ATK is floored at 0. Also un-zeroes Hermode Cap (-20/-10).
     "Mineral": { n_A_ATK: 20, n_A_DEF: 4 }, // ATK -25->-5, DEF 3->7
     // WoE:SE "Biolab" card set — changelog uses shorthand names (Harword,
     // Shecil) that don't exist in this data; the actual rows are named
@@ -901,9 +905,22 @@
   //     Soldier Skeleton and Zhu Po Long (STAT_DELTAS) and Fur Seal
   //     (JOB_CARD_DELTAS); Chung E's per-refine CRIT already rode the engine's
   //     own hardcoded line and was never affected.
+  //   - n_A_ATK: added 2026-10-05, same failure mode a fourth time. Ray
+  //     reported Tarou's +2 ATK not showing. The damage formulas read the
+  //     global after the wrapper, so damage did get it, but StAllCalc builds
+  //     V_ATK from n_A_ATK and prints it (A_ATK2 / A_RealATK) before
+  //     returning, so the status panel showed vanilla ATK. The late add also
+  //     skipped the %ATK step (`n_A_ATK = floor(n_A_ATK*(100+I)/100)`) and the
+  //     `I<0&&SRV>0&&(I=0)` clamp, so the old "rides along with %-scaling"
+  //     note above was wrong. Code 17 is the flat-ATK slot, read exactly once
+  //     in foot.js as `I=n_tok[17]` (occurrence count 1, 0 in head.js), so
+  //     injecting there runs the delta through every step above. Affects every
+  //     n_A_ATK entry in STAT_DELTAS: Hornet, Golem, Tarou, Mutant Dragonoid,
+  //     Stone Shooter, Waste Stove, Mineral, Zenorc.
   var STAT_CODE = {
     n_A_STR: 1, n_A_AGI: 2, n_A_VIT: 3, n_A_INT: 4, n_A_DEX: 5, n_A_LUK: 6,
     n_A_CRI: 10,
+    n_A_ATK: 17,
     n_A_MaxHP: 13, n_A_MaxSP: 14,
     n_A_DEF: 18, n_A_MDEF: 19,
   };
